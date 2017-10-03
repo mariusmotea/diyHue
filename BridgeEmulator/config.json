@@ -73,7 +73,8 @@
         "swversion": "1705121051",
         "timezone": "Europe/Bucharest",
         "whitelist": {},
-        "zigbeechannel": 15
+        "zigbeechannel": 15,
+        "alexaIntergration": true
     },
     "deconz": {
         "enabled": false,
