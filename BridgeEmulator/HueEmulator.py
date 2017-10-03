@@ -1201,7 +1201,8 @@ class S(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps([{"success": "/" + url_pices[3] + "/" + url_pices[4] + " deleted."}]))
 
 class alexa_handler(fauxmo.debounce_handler):
-    def __init__(self, ip, trigger):
+    def __init__(self, light_id, ip, trigger):
+        self.light_id = light_id
         self.ip = ip
         self.trigger = trigger
         fauxmo.debounce_handler.__init__(self)
@@ -1222,7 +1223,7 @@ def alexaIntergration():
     for light in bridge_config["lights_address"]:
         if bridge_config["lights_address"][light]["trigger"]:
             fauxmoLight = bridge_config["lights_address"][light]
-            h = alexa_handler(fauxmoLight["ip"], fauxmoLight["trigger"])
+            h = alexa_handler(light, fauxmoLight["ip"], fauxmoLight["trigger"])
             fauxmo.fauxmo(fauxmoLight["trigger"], u, p, None, fauxmoLight["port"], h)
     while True:
         try:
@@ -1241,7 +1242,7 @@ def run(server_class=HTTPServer, handler_class=S):
 if __name__ == "__main__":
     if bridge_config["deconz"]["enabled"]:
         scanDeconz()
-    if bridge_config["config"]["alexaIntergration"]
+    if bridge_config["config"]["alexaIntergration"]:
         Thread(target=alexaIntergration).start()
     try:
         updateAllLights()

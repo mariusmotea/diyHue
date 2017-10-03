@@ -57,8 +57,6 @@ SETUP_XML = """<?xml version="1.0"?>
 
 def dbg(msg):
     logging.debug(msg)
-
-
 # A simple utility class to wait for incoming data to be
 # ready on a socket.
 
@@ -287,7 +285,7 @@ class upnp_broadcast_responder(object):
             try:
                 self.ssock.bind(('',self.port))
             except Exception, e:
-                dbg("WARNING: Failed to bind %s:%d: %s" , (self.ip,self.port,e))
+                dbg("WARNING: Failed to bind %s:%d: %s" % (self.ip,self.port,e))
                 ok = False
 
             try:
@@ -364,7 +362,7 @@ class debounce_handler(object):
             return True
         return self.act(client_address, False, name)
 
-    def act(self, client_address, state):
+    def act(self, client_address, state, name):
         pass
 
     def debounce(self):
