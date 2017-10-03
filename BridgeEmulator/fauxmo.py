@@ -34,7 +34,6 @@ import socket
 import struct
 import sys
 import time
-import urllib
 import uuid
 import logging
 
@@ -291,7 +290,7 @@ class upnp_broadcast_responder(object):
             try:
                 self.ssock.setsockopt(socket.IPPROTO_IP,socket.IP_ADD_MEMBERSHIP,self.mreq)
             except Exception, e:
-                dbg('WARNING: Failed to join multicast group:',e)
+                dbg('WARNING: Failed to join multicast group: %s' % e)
                 ok = False
 
         except Exception, e:
