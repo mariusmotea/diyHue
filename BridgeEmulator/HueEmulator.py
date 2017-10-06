@@ -1209,10 +1209,12 @@ class alexa_handler(fauxmo.debounce_handler):
 
     def on(self):
         print self.ip, "ON"
+        sendLightRequest(self.light_id, {"on": True})
         return True
 
     def off(self):
         print self.ip, "OFF"
+        sendLightRequest(self.light_id, {"on": False})
         return True
 
 def alexaIntergration():
