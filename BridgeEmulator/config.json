@@ -1,13 +1,13 @@
 {
-  "alarm_config": {
+    "alarm_config": {
         "mail_from": "your_email@gmail.com",
-        "mail_username": "",
         "mail_password": "",
         "mail_recipients": [
             "first_recipient@mail.com",
             "second_recipient@mail.com"
         ],
         "mail_subject": "HUE ALARM TRIGGERED!",
+        "mail_username": "",
         "smtp_port": 465,
         "smtp_server": "smtp.gmail.com"
     },
@@ -54,16 +54,17 @@
     },
     "config": {
         "UTC": "2017-04-26T20:16:20",
+        "alexaIntergration": true,
         "apiversion": "1.19.0",
-        "bridgeid": "B827EBC76B26",
+        "bridgeid": "7824AFFFFEC82453",
         "datastoreversion": 59,
         "dhcp": true,
         "factorynew": false,
-        "gateway": "192.168.1.1",
-        "ipaddress": "192.168.10.200",
+        "gateway": "192.168.1.6",
+        "ipaddress": "192.168.1.6",
         "linkbutton": true,
         "localtime": "2017-04-26T23:16:20",
-        "mac": "b8:27:eb:c7:6b:26",
+        "mac": "78:24:af:c8:24:53",
         "modelid": "BSB002",
         "name": "Philips hue",
         "netmask": "255.255.255.0",
@@ -83,10 +84,10 @@
     },
     "groups": {},
     "lights": {},
+    "lights_address": {},
     "resourcelinks": {},
     "rules": {},
     "scenes": {},
     "schedules": {},
-    "sensors": {},
-    "lights_address": {}
+    "sensors": {}
 }

@@ -9,6 +9,7 @@ from threading import Thread
 from collections import defaultdict
 from uuid import getnode as get_mac
 from urlparse import urlparse, parse_qs
+import fauxmo
 
 mac = '%012x' % get_mac()
 
@@ -570,9 +571,9 @@ def scanForLights(): #scan for ESP8266 lights and strips
                                 modelid = "LCT003"
                             bridge_config["lights"][new_light_id] = {"state": {"on": False, "bri": 200, "hue": 0, "sat": 0, "xy": [0.0, 0.0], "ct": 461, "alert": "none", "effect": "none", "colormode": "ct", "reachable": True}, "type": "Extended color light", "name": "Hue " + device_data["type"] + " " + device_data["hue"] + " " + str(x), "uniqueid": device_data["mac"] + "-" + str(x), "modelid": modelid, "swversion": "66009461"}
                             new_lights.update({new_light_id: {"name": "Hue " + device_data["type"] + " " + device_data["hue"] + " " + str(x)}})
-                            bridge_config["lights_address"][new_light_id] = {"ip": ip, "light_nr": x, "protocol": "native"}
+                            bridge_config["lights_address"][new_light_id] = {"ip": ip, "light_nr": x, "protocol": "native", "trigger": "Hue " + device_data["type"] + new_light_id, "port": 520 + int(new_light_id)}
             except Exception as e:
-                print(ip + " is unknow device " + str(e))
+                print(ip + " is unknown device " + str(e))
     scanDeconz()
 
 def syncWithLights(): #update Hue Bridge lights states
@@ -1323,6 +1324,41 @@ class S(BaseHTTPRequestHandler):
                         del bridge_config["deconz"]["sensors"][sensor]
             self.wfile.write(json.dumps([{"success": "/" + url_pices[3] + "/" + url_pices[4] + " deleted."}]))
 
+class alexa_handler(fauxmo.debounce_handler):
+    def __init__(self, light_id, ip, trigger):
+        self.light_id = light_id
+        self.ip = ip
+        self.trigger = trigger
+        fauxmo.debounce_handler.__init__(self)
+
+    def on(self):
+        print self.ip, "ON"
+        sendLightRequest(self.light_id, {"on": True})
+        return True
+
+    def off(self):
+        print self.ip, "OFF"
+        sendLightRequest(self.light_id, {"on": False})
+        return True
+
+def alexaIntergration():
+    p = fauxmo.poller()
+    u = fauxmo.upnp_broadcast_responder()
+    u.init_socket()
+    p.add(u)
+    for light in bridge_config["lights_address"]:
+        if bridge_config["lights_address"][light]["trigger"]:
+            fauxmoLight = bridge_config["lights_address"][light]
+            h = alexa_handler(light, fauxmoLight["ip"], fauxmoLight["trigger"])
+            fauxmo.fauxmo(fauxmoLight["trigger"], u, p, None, fauxmoLight["port"], h)
+    while True:
+        try:
+            p.poll(100)
+            time.sleep(0.1)
+        except Exception, e:
+            print("Critical exception: " + str(e))
+            break
+
 def run(server_class=HTTPServer, handler_class=S):
     server_address = ('', 80)
     httpd = server_class(server_address, handler_class)
@@ -1332,6 +1368,8 @@ def run(server_class=HTTPServer, handler_class=S):
 if __name__ == "__main__":
     if bridge_config["deconz"]["enabled"]:
         scanDeconz()
+    if bridge_config["config"]["alexaIntergration"]:
+        Thread(target=alexaIntergration).start()
     try:
         updateAllLights()
         Thread(target=ssdpSearch).start()
