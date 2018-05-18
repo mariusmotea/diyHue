@@ -84,9 +84,9 @@ def generateSensorsState():
 generateSensorsState() #comment this line if you don't want to restore last known state to all lights on startup
 
 def getIpAddress():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    return s.getsockname()[0]
+
+
+    return "192.168.8.1"
 
 
 bridge_config["config"]["ipaddress"] = getIpAddress()
