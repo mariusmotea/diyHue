@@ -1266,7 +1266,7 @@ class S(BaseHTTPRequestHandler):
         if self.path == '/' or self.path == '/index.html':
             mimetype = 1
             self._set_headers()
-            f = open('./web-ui/index.html')
+            f = open('/opt/hue-emulator/web-ui/index.html')
             self.wfile.write(bytes(f.read(), "utf8"))
         elif self.path.endswith(".js"):
             mimetype = 3
@@ -1277,17 +1277,17 @@ class S(BaseHTTPRequestHandler):
                     bridge_config["config"]["whitelist"]["web-ui-" + str(random.randrange(0, 99999))] = {"create date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),"last use date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),"name": "WegGui User"}
                 self.wfile.write(bytes('window.config = { API_KEY: "' + list(bridge_config["config"]["whitelist"])[0] + '",};', "utf8"))
             else:
-                f = open('./web-ui' + self.path)
+                f = open('/opt/hue-emulator/web-ui' + self.path)
                 self.wfile.write(bytes(f.read(), "utf8"))
         elif self.path.endswith(".css"):
             mimetype = 4
             self._set_headers()
-            f = open('./web-ui' + self.path)
+            f = open('/opt/hue-emulator/web-ui' + self.path)
             self.wfile.write(bytes(f.read(), "utf8"))
         elif self.path.endswith(".map"):
             mimetype = 0
             self._set_headers()
-            f = open('./web-ui' + self.path, encoding="utf-8")
+            f = open('/opt/hue-emulator/web-ui' + self.path, encoding="utf-8")
             self.wfile.write(bytes(f.read(), "utf8"))
         elif self.path == '/description.xml':
             mimetype = 2
