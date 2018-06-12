@@ -13,7 +13,9 @@ cd /tmp
 git clone -b OpenWrt git://github.com/juanesf/diyHue.git
 sleep 200s
 cd /tmp/diyHue/BridgeEmulator
-cp  HueEmulator3.py config.json updater coap-client-linux /opt/hue-emulator/
+cp  HueEmulator3.py config.json updater coap-client-linux cert.pem /opt/hue-emulator/
+cp -r web-ui functions /opt/hue-emulator/
+cp -r functions /opt/hue-emulator/
 sleep 3s
 cp hueemulator /etc/init.d/
 sleep 2s
@@ -21,6 +23,8 @@ chmod +x /etc/init.d/hueemulator
 chmod +x /opt/hue-emulator/HueEmulator3.py
 chmod +x /opt/hue-emulator/coap-client-linux
 chmod +x /opt/hue-emulator/updater
+chmod +x /opt/hue-emulator/web-ui
+chmod +x /opt/hue-emulator/functions
 /etc/init.d/hueemulator enable
 sleep 1s
 echo -e "\033[32m Installation completed. Open Hue app and search for bridges.\033[0m"
