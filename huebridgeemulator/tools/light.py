@@ -239,31 +239,7 @@ def sendLightRequest(conf_obj, light, data):
                     (payload["color"]["r"], payload["color"]["g"], payload["color"]["b"]) = convert_xy(value[0], value[1], bridge_config["lights"][light]["state"]["bri"])
             print(json.dumps(payload))
         elif bridge_config["lights_address"][light]["protocol"] == "yeelight": #YeeLight bulb
-            url = "http://" + str(bridge_config["lights_address"][light]["ip"])
-            method = 'TCP'
-            transitiontime = 400
-            if "transitiontime" in data:
-                transitiontime = data["transitiontime"] * 100
-            for key, value in data.items():
-                if key == "on":
-                    if value:
-                        payload["set_power"] = ["on", "smooth", transitiontime]
-                    else:
-                        payload["set_power"] = ["off", "smooth", transitiontime]
-                elif key == "bri":
-                    payload["set_bright"] = [int(value / 2.55) + 1, "smooth", transitiontime]
-                elif key == "ct":
-                    payload["set_ct_abx"] = [int(1000000 / value), "smooth", transitiontime]
-                elif key == "hue":
-                    payload["set_hsv"] = [int(value / 182), int(bridge_config["lights"][light]["state"]["sat"] / 2.54), "smooth", transitiontime]
-                elif key == "sat":
-                    payload["set_hsv"] = [int(value / 2.54), int(bridge_config["lights"][light]["state"]["hue"] / 2.54), "smooth", transitiontime]
-                elif key == "xy":
-                    color = convert_xy(value[0], value[1], bridge_config["lights"][light]["state"]["bri"])
-                    payload["set_rgb"] = [(color[0] * 65536) + (color[1] * 256) + color[2], "smooth", transitiontime] #according to docs, yeelight needs this to set rgb. its r * 65536 + g * 256 + b
-                elif key == "alert" and value != "none":
-                    payload["start_cf"] = [ 4, 0, "1000, 2, 5500, 100, 1000, 2, 5500, 1, 1000, 2, 5500, 100, 1000, 2, 5500, 1"]
-
+            raise Exception("Yeelight light are now a class")
 
         elif bridge_config["lights_address"][light]["protocol"] == "ikea_tradfri": #IKEA Tradfri bulb
             url = "coaps://" + bridge_config["lights_address"][light]["ip"] + ":5684/15001/" + str(bridge_config["lights_address"][light]["device_id"])
@@ -331,5 +307,3 @@ def sendLightRequest(conf_obj, light, data):
         else:
             bridge_config["lights"][light]["state"]["reachable"] = True
             print("LightRequest: " + url)
-
-

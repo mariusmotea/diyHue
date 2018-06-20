@@ -1,10 +1,13 @@
 from collections import defaultdict
 from huebridgeemulator.tools import getIpAddress
 from uuid import getnode as get_mac
+from datetime import datetime
 import json
 import sys
 
 import yaml
+
+from huebridgeemulator.device.yeelight.light import YeelightLight
 
 
 def loadConfig(filename):  #load and configure alarm virtual light
@@ -47,9 +50,13 @@ class Config(object):
         # TODO: is this useless ?
         self.bridge = defaultdict(lambda:defaultdict(str))
         self._mac = '%012x' % get_mac()
+        # lights registry
+        self.lights = {}
+        # just added lights
+        self._new_lights = {}
+        # Load from file
         self.load()
         self._startup()
-        
 
     def _startup(self):
         ip_pices = getIpAddress().split(".")
@@ -64,7 +71,11 @@ class Config(object):
         # TODO add yaml
         with open(self.filepath, 'r') as cfs:
             self.bridge = json.load(cfs)
-
+        for index, light in self.bridge['lights'].items():
+            if light['manufacturername'] == "yeelight":
+                address = self.bridge['lights_address'][index] 
+                new_light = YeelightLight(index=index, address=address, **light)
+                self.lights[index] = new_light
 
     def save(self):
         """Write configuration from file"""
@@ -78,4 +89,25 @@ class Config(object):
             i += 1
         return str(i)
 
+    def add_new_light(self, light):
+        # Add new light to the lights registry
+        self.lights[light.index] = light
+        self._new_lights.update({light.index: {"name": light.name}})
+        self._new_lights.update({"lastscan": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")})
 
+    def get_new_lights(self):
+        return self._new_lights
+
+    def clear_new_lights(self):
+        self._new_lights.clear()
+
+    def get_light(self, index):
+        """Get light from index"""
+        return self.lights[index]
+
+    def get_json_lights(self):
+        """Return all lights in JSON format"""
+        ret = {}
+        for index, light in self.lights.items():
+            ret[index] = light.serialize()
+        return json.dumps(ret)

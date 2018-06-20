@@ -258,12 +258,18 @@ class S(BaseHTTPRequestHandler):
                 if len(url_pices) == 3 or (len(url_pices) == 4 and url_pices[3] == ""): #print entire config
                     self.wfile.write(bytes(json.dumps({"lights": bridge_config["lights"], "groups": bridge_config["groups"], "config": bridge_config["config"], "scenes": bridge_config["scenes"], "schedules": bridge_config["schedules"], "rules": bridge_config["rules"], "sensors": bridge_config["sensors"], "resourcelinks": bridge_config["resourcelinks"]}), "utf8"))
                 elif len(url_pices) == 4 or (len(url_pices) == 5 and url_pices[4] == ""): #print specified object config
-                    self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]]), "utf8"))
+                    if url_pices[3] == "lights":
+                        self.wfile.write(bytes(self.server.context['conf_obj'].get_json_lights(), "utf8"))
+#                        self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]]), "utf8"))
+                    else:
+                        self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]]), "utf8"))
                 elif len(url_pices) == 5 or (len(url_pices) == 6 and url_pices[5] == ""):
                     if url_pices[4] == "new": #return new lights and sensors only
-                        self.server.context['new_lights'].update({"lastscan": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")})
-                        self.wfile.write(bytes(json.dumps(self.server.context['new_lights']), "utf8"))
-                        self.server.context['new_lights'].clear()
+#                        self.server.context['new_lights'].update({"lastscan": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")})
+                        print(self.server.context['conf_obj'].get_new_lights())
+                        self.wfile.write(bytes(json.dumps(self.server.context['conf_obj'].get_new_lights()), "utf8"))
+                        #self.wfile.write(bytes(json.dumps(self.server.context['new_lights']), "utf8"))
+                        self.server.context['conf_obj'].clear_new_lights()
                     elif url_pices[3] == "groups" and url_pices[4] == "0":
                         any_on = False
                         all_on = True
@@ -276,7 +282,8 @@ class S(BaseHTTPRequestHandler):
                     elif url_pices[3] == "info":
                         self.wfile.write(bytes(json.dumps(bridge_config["capabilities"][url_pices[4]]), "utf8"))
                     else:
-                        self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]][url_pices[4]]), "utf8"))
+                        self.wfile.write(bytes(self.server.context['conf_obj'].get_light(url_pices[4]).toJSON(), "utf8"))
+#                        self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]][url_pices[4]]), "utf8"))
                 elif len(url_pices) == 6 or (len(url_pices) == 7 and url_pices[6] == ""):
                     self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]][url_pices[4]][url_pices[5]]), "utf8"))
             elif (url_pices[2] == "nouser" or url_pices[2] == "none" or url_pices[2] == "config"): #used by applications to discover the bridge
@@ -308,6 +315,7 @@ class S(BaseHTTPRequestHandler):
                 if ((url_pices[3] == "lights" or url_pices[3] == "sensors") and not bool(post_dictionary)):
                     #if was a request to scan for lights of sensors
                     Thread(target=scanForLights, args=[self.server.context['conf_obj'], self.server.context['new_lights']]).start()
+                    # TODO wait this thread but add a timeout
                     sleep(7) #give no more than 5 seconds for light scanning (otherwise will face app disconnection timeout)
                     self.wfile.write(bytes(json.dumps([{"success": {"/" + url_pices[3]: "Searching for new devices"}}]), "utf8"))
                 elif url_pices[3] == "":
@@ -346,7 +354,6 @@ class S(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(json.dumps([{"error": {"type": 1, "address": self.path, "description": "unauthorized user" }}],sort_keys=True, indent=4, separators=(',', ': ')), "utf8"))
                 print(json.dumps([{"error": {"type": 1, "address": self.path, "description": "unauthorized user" }}],sort_keys=True, indent=4, separators=(',', ': ')))
         elif self.path.startswith("/api") and "devicetype" in post_dictionary and bridge_config["config"]["linkbutton"]: #this must be a new device registration
-                print("QQQQQQQQQQQQQQQQ2")
                 #create new user hash
                 username = hashlib.new('ripemd160', post_dictionary["devicetype"][0].encode('utf-8')).hexdigest()[:32]
                 bridge_config["config"]["whitelist"][username] = {"last use date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"create date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"name": post_dictionary["devicetype"]}
@@ -356,9 +363,7 @@ class S(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(json.dumps(response), "utf8"))
                 print(json.dumps(response, sort_keys=True, indent=4, separators=(',', ': ')))
         elif self.path.startswith("/api") and "devicetype" in post_dictionary and not bridge_config["config"]["linkbutton"]: #new registration by linkbutton
-                print("QQQQQQQQQQQQQQQQ3")
                 if int(bridge_config["linkbutton"]["lastlinkbuttonpushed"])+30 >= int(datetime.now().strftime("%s")):
-                    print("QQQQQQQQQQQQQQQQ31")
                     username = hashlib.new('ripemd160', post_dictionary["devicetype"][0].encode('utf-8')).hexdigest()[:32]
                     bridge_config["config"]["whitelist"][username] = {"last use date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"create date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"name": post_dictionary["devicetype"]}
                     response = [{"success": {"username": username}}]
@@ -367,7 +372,6 @@ class S(BaseHTTPRequestHandler):
                     self.wfile.write(bytes(json.dumps(response), "utf8"))
                     print(json.dumps(response, sort_keys=True, indent=4, separators=(',', ': ')))
                 else:
-                    print("QQQQQQQQQQQQQQQQ32")
                     self.wfile.write(bytes(json.dumps([{"error": {"type": 101, "address": self.path, "description": "link button not pressed" }}],sort_keys=True, indent=4, separators=(',', ': ')), "utf8"))
         self.end_headers()
 #        import ipdb;ipdb.set_trace()
@@ -425,12 +429,20 @@ class S(BaseHTTPRequestHandler):
                             if bridge_config["lights_address"][light]["ip"] not in lightsIps:
                                 lightsIps.append(bridge_config["lights_address"][light]["ip"])
                                 processedLights.append(light)
-                                Thread(target=sendLightRequest, args=[self.server.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]]).start()
+                                current_light = self.server.context['conf_obj'].get_light(light)
+                                if current_light.manufacturername == "yeelight":
+                                    Thread(target=current_light.send_request, args=[put_dictionary]).start()
+                                else:
+                                    Thread(target=sendLightRequest, args=[self.server.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]]).start()
                         sleep(0.2) #give some time for the device to process the threaded request
                         #now send the rest of the requests in non threaded mode
                         for light in bridge_config["scenes"][put_dictionary["scene"]]["lights"]:
                             if light not in processedLights:
-                                sendLightRequest(self.server.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
+                                current_light = self.server.context['conf_obj'].get_light(light)
+                                if current_light.manufacturername == "yeelight":
+                                    current_light.send_request(bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
+                                else:
+                                    sendLightRequest(self.server.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
                             updateGroupStats(self.server.context['conf_obj'], light)
 
                     elif "bri_inc" in put_dictionary:
@@ -482,7 +494,12 @@ class S(BaseHTTPRequestHandler):
                             if bridge_config["lights_address"][light]["ip"] not in lightsIps:
                                 lightsIps.append(bridge_config["lights_address"][light]["ip"])
                                 processedLights.append(light)
-                                Thread(target=sendLightRequest, args=[self.server.context['conf_obj'], light, put_dictionary]).start()
+                                current_light = self.server.context['conf_obj'].get_light(light)
+                                print("BBBB"*78)
+                                if current_light.manufacturername == "yeelight":
+                                    Thread(target=current_light.send_request, args=[put_dictionary]).start()
+                                else:
+                                    Thread(target=sendLightRequest, args=[self.server.context['conf_obj'], light, put_dictionary]).start()
                         sleep(0.2) #give some time for the device to process the threaded request
                         #now send the rest of the requests in non threaded mode
                         for light in bridge_config["groups"][url_pices[4]]["lights"]:
@@ -495,7 +512,11 @@ class S(BaseHTTPRequestHandler):
                         elif key in ["hue", "sat"]:
                             bridge_config["lights"][url_pices[4]]["state"]["colormode"] = "hs"
                     updateGroupStats(self.server.context['conf_obj'], url_pices[4])
-                    sendLightRequest(self.server.context['conf_obj'], url_pices[4], put_dictionary)
+                    current_light = self.server.context['conf_obj'].get_light(url_pices[4]) 
+                    if current_light.manufacturername == "yeelight":
+                        current_light.send_request(put_dictionary)
+                    else:
+                        sendLightRequest(self.server.context['conf_obj'], url_pices[4], put_dictionary)
                 if not url_pices[4] == "0": #group 0 is virtual, must not be saved in bridge configuration
                     try:
                         bridge_config[url_pices[3]][url_pices[4]][url_pices[5]].update(put_dictionary)

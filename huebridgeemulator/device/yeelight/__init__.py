@@ -6,6 +6,7 @@ from huebridgeemulator.const import LIGHT_TYPES
 from huebridgeemulator.device.yeelight.light import YeelightLight
 
 
+
 def _nextFreeId(bridge_config, element):
     i = 1
     while (str(i)) in bridge_config[element]:
@@ -15,6 +16,7 @@ def _nextFreeId(bridge_config, element):
 
 def sendToYeelight(url, api_method, param):
     try:
+#        print({"id": 1, "method": api_method, "params": param})
         tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tcp_socket.settimeout(5)
         tcp_socket.connect((url, int(55443)))
@@ -71,17 +73,20 @@ def discoverYeelight(conf_obj, new_lights):
                 elif properties["ct"]:
                     modelid = "LTW001"
                 new_light_id = conf_obj.nextFreeId("lights")
+                address = {"ip": properties["ip"], "id": properties["id"], "protocol": "yeelight"}
                 new_light = YeelightLight(index=new_light_id,
-                                          type_=LIGHT_TYPES[modelid]["type"],
+                                          type=LIGHT_TYPES[modelid]["type"],
                                           name=light_name,
                                           uniqueid="4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1",
                                           modelid=modelid,
                                           manufacturername="Philips",
                                           swversion=LIGHT_TYPES[modelid]["swversion"],
-                                          raw_state=LIGHT_TYPES[modelid]["state"],
+                                          state=LIGHT_TYPES[modelid]["state"],
+                                          address=address,
                                           )
+                conf_obj.add_new_light(new_light)
                 bridge_config["lights"][new_light_id] = {"state": LIGHT_TYPES[modelid]["state"], "type": LIGHT_TYPES[modelid]["type"], "name": light_name, "uniqueid": "4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1", "modelid": modelid, "manufacturername": "Philips", "swversion": LIGHT_TYPES[modelid]["swversion"]}
-                new_lights.update({new_light_id: {"name": light_name}})
+#                new_lights.update({new_light_id: {"name": light_name}})
                 bridge_config["lights_address"][new_light_id] = {"ip": properties["ip"], "id": properties["id"], "protocol": "yeelight"}
 
 
