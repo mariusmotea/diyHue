@@ -1,0 +1,4 @@
+tox
+pylint
+flake8
+pycodestyle
