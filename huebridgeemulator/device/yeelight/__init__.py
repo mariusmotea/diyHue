@@ -1,3 +1,18 @@
+import socket
+import random
+import json
+
+from huebridgeemulator.const import LIGHT_TYPES
+from huebridgeemulator.device.yeelight.light import YeelightLight
+
+
+def _nextFreeId(bridge_config, element):
+    i = 1
+    while (str(i)) in bridge_config[element]:
+        i += 1
+    return str(i)
+
+
 def sendToYeelight(url, api_method, param):
     try:
         tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -7,10 +22,12 @@ def sendToYeelight(url, api_method, param):
         tcp_socket.send(msg.encode())
         tcp_socket.close()
     except Exception as e:
+        raise e
         print ("Unexpected error:", e)
 
 
-def discoverYeelight():
+def discoverYeelight(conf_obj, new_lights):
+    bridge_config = conf_obj.bridge
     group = ("239.255.255.250", 1982)
     message = "\r\n".join([
         'M-SEARCH * HTTP/1.1',
@@ -38,6 +55,7 @@ def discoverYeelight():
                 elif line[:4] == "name":
                     properties["name"] = line[6:]
             device_exist = False
+            # Check if the device exists
             for light in bridge_config["lights_address"].keys():
                 if bridge_config["lights_address"][light]["protocol"] == "yeelight" and  bridge_config["lights_address"][light]["id"] == properties["id"]:
                     device_exist = True
@@ -52,13 +70,22 @@ def discoverYeelight():
                     modelid = "LCT015"
                 elif properties["ct"]:
                     modelid = "LTW001"
-                new_light_id = nextFreeId("lights")
-                bridge_config["lights"][new_light_id] = {"state": light_types[modelid]["state"], "type": light_types[modelid]["type"], "name": light_name, "uniqueid": "4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1", "modelid": modelid, "manufacturername": "Philips", "swversion": light_types[modelid]["swversion"]}
+                new_light_id = conf_obj.nextFreeId("lights")
+                new_light = YeelightLight(index=new_light_id,
+                                          type_=LIGHT_TYPES[modelid]["type"],
+                                          name=light_name,
+                                          uniqueid="4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1",
+                                          modelid=modelid,
+                                          manufacturername="Philips",
+                                          swversion=LIGHT_TYPES[modelid]["swversion"],
+                                          raw_state=LIGHT_TYPES[modelid]["state"],
+                                          )
+                bridge_config["lights"][new_light_id] = {"state": LIGHT_TYPES[modelid]["state"], "type": LIGHT_TYPES[modelid]["type"], "name": light_name, "uniqueid": "4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1", "modelid": modelid, "manufacturername": "Philips", "swversion": LIGHT_TYPES[modelid]["swversion"]}
                 new_lights.update({new_light_id: {"name": light_name}})
                 bridge_config["lights_address"][new_light_id] = {"ip": properties["ip"], "id": properties["id"], "protocol": "yeelight"}
 
 
-        except socket.timeout:
+        except socket.timeout as exp:
             print('Yeelight search end')
             sock.close()
             break

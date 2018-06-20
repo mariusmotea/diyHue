@@ -17,35 +17,17 @@ from functions import *
 from uuid import getnode as get_mac
 
 
+from threading import Thread
+from huebridgeemulator.config import saveConfig
+from huebridgeemulator.tools import generateSensorsState
+from huebridgeemulator.tools.light import scanForLights, updateGroupStats, sendLightRequest
+from huebridgeemulator.http.client import sendRequest
 
-def sendRequest(url, method, data, timeout=3, delay=0):
-    if delay != 0:
-        sleep(delay)
-    if not url.startswith( 'http://' ):
-        url = "http://127.0.0.1" + url
-    head = {"Content-type": "application/json"}
-    if method == "POST":
-        response = requests.post(url, data=bytes(data, "utf8"), timeout=timeout, headers=head)
-        return response.text
-    elif method == "PUT":
-        response = requests.put(url, data=bytes(data, "utf8"), timeout=timeout, headers=head)
-        return response.text
-    elif method == "GET":
-        response = requests.get(url, timeout=timeout, headers=head)
-        return response.text
-    elif method == "TCP":
-        if "//" in url: # cutting out the http://
-            http, url = url.split("//",1)
-        # yeelight uses different functions for each action, so it has to check for each function
-        # see page 9 http://www.yeelight.com/download/Yeelight_Inter-Operation_Spec.pdf
-        # check if hue wants to change brightness
-        for key, value in json.loads(data).items():
-            sendToYeelight(url, key, value)
 
 class S(BaseHTTPRequestHandler):
 
     def _nextFreeId(self, element):
-        bridge_config = self.server.context['bridge_config']
+        bridge_config = self.server.context['conf_obj'].bridge
         i = 1
         while (str(i)) in bridge_config[element]:
             i += 1
@@ -69,7 +51,7 @@ class S(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        bridge_config = self.server.context['bridge_config']
+        bridge_config = self.server.context['conf_obj'].bridge
         mac = self.server.context['mac']
         if self.path == '/' or self.path == '/index.html':
             self._set_headers()
@@ -89,7 +71,7 @@ class S(BaseHTTPRequestHandler):
             self._set_headers()
             self.wfile.write(bytes(description(bridge_config["config"]["ipaddress"], mac), "utf8"))
         elif self.path == '/save':
-            saveConfig()
+            saveConfig(bridge_config)
             self.wfile.write(bytes("config saved", "utf8"))
         elif self.path.startswith("/tradfri"): #setup Tradfri gateway
             self._set_headers()
@@ -130,7 +112,8 @@ class S(BaseHTTPRequestHandler):
                         self._set_headers()
                         bridge_config["config"]["linkbutton"] = False
                         bridge_config["linkbutton"]["lastlinkbuttonpushed"] = datetime.now().strftime("%s")
-                        saveConfig()
+                        #saveConfig(bridge_config)
+                        self.server.context['conf_obj'].save()
                         self.wfile.write(bytes(webform_linkbutton() + "<br> You have 30 sec to connect your device", "utf8"))
                     elif "action=Exit" in self.path:
                         self._set_AUTHHEAD()
@@ -139,7 +122,7 @@ class S(BaseHTTPRequestHandler):
                         self._set_headers()
                         tmp_password = str(base64.b64encode(bytes(get_parameters["username"][0] + ":" + get_parameters["password"][0], "utf8"))).split('\'')
                         bridge_config["linkbutton"]["linkbutton_auth"] = tmp_password[1]
-                        saveConfig()
+                        saveConfig(bridge_config)
                         self.wfile.write(bytes(webform_linkbutton() + '<br> Your credentials are succesfully change. Please logout then login again', "utf8"))
                     else:
                         self._set_headers()
@@ -147,7 +130,7 @@ class S(BaseHTTPRequestHandler):
                     pass
                 else:
                     self._set_AUTHHEAD()
-                    self.wfile.write(bytes(self.headers.headers['Authorization'], "utf8"))
+                    self.wfile.write(bytes(self.headers['Authorization'], "utf8"))
                     self.wfile.write(bytes('not authenticated', "utf8"))
                     pass
             else:
@@ -236,7 +219,7 @@ class S(BaseHTTPRequestHandler):
                     elif get_parameters["devicetype"][0] == "ZLLPresence":
                         print("ZLLPresence")
                         addHueMotionSensor(get_parameters["mac"][0])
-                    generateSensorsState()
+                    generateSensorsState(bridge_config, self.server.context['sensors_state'])
             else: #switch action request
                 for sensor in bridge_config["sensors"]:
                     if bridge_config["sensors"][sensor]["uniqueid"].startswith(get_parameters["mac"][0]) and bridge_config["sensors"][sensor]["config"]["on"]: #match senser id based on mac address
@@ -278,9 +261,9 @@ class S(BaseHTTPRequestHandler):
                     self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]]), "utf8"))
                 elif len(url_pices) == 5 or (len(url_pices) == 6 and url_pices[5] == ""):
                     if url_pices[4] == "new": #return new lights and sensors only
-                        new_lights.update({"lastscan": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")})
-                        self.wfile.write(bytes(json.dumps(new_lights), "utf8"))
-                        new_lights.clear()
+                        self.server.context['new_lights'].update({"lastscan": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")})
+                        self.wfile.write(bytes(json.dumps(self.server.context['new_lights']), "utf8"))
+                        self.server.context['new_lights'].clear()
                     elif url_pices[3] == "groups" and url_pices[4] == "0":
                         any_on = False
                         all_on = True
@@ -303,7 +286,7 @@ class S(BaseHTTPRequestHandler):
 
 
     def do_POST(self):
-        bridge_config = self.server.context['bridge_config']
+        bridge_config = self.server.context['conf_obj'].bridge
         self._set_headers()
         print ("in post method")
         print(self.path)
@@ -324,7 +307,7 @@ class S(BaseHTTPRequestHandler):
             if url_pices[2] in bridge_config["config"]["whitelist"]:
                 if ((url_pices[3] == "lights" or url_pices[3] == "sensors") and not bool(post_dictionary)):
                     #if was a request to scan for lights of sensors
-                    Thread(target=scanForLights).start()
+                    Thread(target=scanForLights, args=[self.server.context['conf_obj'], self.server.context['new_lights']]).start()
                     sleep(7) #give no more than 5 seconds for light scanning (otherwise will face app disconnection timeout)
                     self.wfile.write(bytes(json.dumps([{"success": {"/" + url_pices[3]: "Searching for new devices"}}]), "utf8"))
                 elif url_pices[3] == "":
@@ -355,7 +338,7 @@ class S(BaseHTTPRequestHandler):
                             post_dictionary.update({"state": {"status": 0}})
                     elif url_pices[3] == "resourcelinks":
                         post_dictionary.update({"owner" :url_pices[2]})
-                    generateSensorsState()
+                    generateSensorsState(bridge_config, self.server.context['sensors_state'])
                     bridge_config[url_pices[3]][new_object_id] = post_dictionary
                     print(json.dumps([{"success": {"id": new_object_id}}], sort_keys=True, indent=4, separators=(',', ': ')))
                     self.wfile.write(bytes(json.dumps([{"success": {"id": new_object_id}}], sort_keys=True, indent=4, separators=(',', ': ')), "utf8"))
@@ -363,6 +346,7 @@ class S(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(json.dumps([{"error": {"type": 1, "address": self.path, "description": "unauthorized user" }}],sort_keys=True, indent=4, separators=(',', ': ')), "utf8"))
                 print(json.dumps([{"error": {"type": 1, "address": self.path, "description": "unauthorized user" }}],sort_keys=True, indent=4, separators=(',', ': ')))
         elif self.path.startswith("/api") and "devicetype" in post_dictionary and bridge_config["config"]["linkbutton"]: #this must be a new device registration
+                print("QQQQQQQQQQQQQQQQ2")
                 #create new user hash
                 username = hashlib.new('ripemd160', post_dictionary["devicetype"][0].encode('utf-8')).hexdigest()[:32]
                 bridge_config["config"]["whitelist"][username] = {"last use date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"create date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"name": post_dictionary["devicetype"]}
@@ -372,7 +356,9 @@ class S(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(json.dumps(response), "utf8"))
                 print(json.dumps(response, sort_keys=True, indent=4, separators=(',', ': ')))
         elif self.path.startswith("/api") and "devicetype" in post_dictionary and not bridge_config["config"]["linkbutton"]: #new registration by linkbutton
+                print("QQQQQQQQQQQQQQQQ3")
                 if int(bridge_config["linkbutton"]["lastlinkbuttonpushed"])+30 >= int(datetime.now().strftime("%s")):
+                    print("QQQQQQQQQQQQQQQQ31")
                     username = hashlib.new('ripemd160', post_dictionary["devicetype"][0].encode('utf-8')).hexdigest()[:32]
                     bridge_config["config"]["whitelist"][username] = {"last use date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"create date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"name": post_dictionary["devicetype"]}
                     response = [{"success": {"username": username}}]
@@ -381,12 +367,15 @@ class S(BaseHTTPRequestHandler):
                     self.wfile.write(bytes(json.dumps(response), "utf8"))
                     print(json.dumps(response, sort_keys=True, indent=4, separators=(',', ': ')))
                 else:
+                    print("QQQQQQQQQQQQQQQQ32")
                     self.wfile.write(bytes(json.dumps([{"error": {"type": 101, "address": self.path, "description": "link button not pressed" }}],sort_keys=True, indent=4, separators=(',', ': ')), "utf8"))
         self.end_headers()
-        saveConfig()
+#        import ipdb;ipdb.set_trace()
+        self.server.context['conf_obj'].save()
+        #saveConfig(bridge_config)
 
     def do_PUT(self):
-        bridge_config = self.server.context['bridge_config']
+        bridge_config = self.server.context['conf_obj'].bridge
         self._set_headers()
         print ("in PUT method")
         self.data_string = self.rfile.read(int(self.headers['Content-Length']))
@@ -436,13 +425,13 @@ class S(BaseHTTPRequestHandler):
                             if bridge_config["lights_address"][light]["ip"] not in lightsIps:
                                 lightsIps.append(bridge_config["lights_address"][light]["ip"])
                                 processedLights.append(light)
-                                Thread(target=sendLightRequest, args=[light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]]).start()
+                                Thread(target=sendLightRequest, args=[self.server.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]]).start()
                         sleep(0.2) #give some time for the device to process the threaded request
                         #now send the rest of the requests in non threaded mode
                         for light in bridge_config["scenes"][put_dictionary["scene"]]["lights"]:
                             if light not in processedLights:
-                                sendLightRequest(light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
-                            updateGroupStats(light)
+                                sendLightRequest(self.server.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
+                            updateGroupStats(self.server.context['conf_obj'], light)
 
                     elif "bri_inc" in put_dictionary:
                         bridge_config["groups"][url_pices[4]]["action"]["bri"] += int(put_dictionary["bri_inc"])
@@ -455,7 +444,7 @@ class S(BaseHTTPRequestHandler):
                         put_dictionary.update({"bri": bridge_config["groups"][url_pices[4]]["action"]["bri"]})
                         for light in bridge_config["groups"][url_pices[4]]["lights"]:
                             bridge_config["lights"][light]["state"].update(put_dictionary)
-                            sendLightRequest(light, put_dictionary)
+                            sendLightRequest(self.server.context['conf_obj'], light, put_dictionary)
                     elif "ct_inc" in put_dictionary:
                         bridge_config["groups"][url_pices[4]]["action"]["ct"] += int(put_dictionary["ct_inc"])
                         if bridge_config["groups"][url_pices[4]]["action"]["ct"] > 500:
@@ -467,14 +456,14 @@ class S(BaseHTTPRequestHandler):
                         put_dictionary.update({"ct": bridge_config["groups"][url_pices[4]]["action"]["ct"]})
                         for light in bridge_config["groups"][url_pices[4]]["lights"]:
                             bridge_config["lights"][light]["state"].update(put_dictionary)
-                            sendLightRequest(light, put_dictionary)
+                            sendLightRequest(self.server.context['conf_obj'], light, put_dictionary)
                     elif "scene_inc" in put_dictionary:
                         switchScene(url_pices[4], put_dictionary["scene_inc"])
                     elif url_pices[4] == "0": #if group is 0 the scene applied to all lights
                         for light in bridge_config["lights"].keys():
                             if "virtual_light" not in bridge_config["alarm_config"] or light != bridge_config["alarm_config"]["virtual_light"]:
                                 bridge_config["lights"][light]["state"].update(put_dictionary)
-                                sendLightRequest(light, put_dictionary)
+                                sendLightRequest(self.server.context['conf_obj'], light, put_dictionary)
                         for group in bridge_config["groups"].keys():
                             bridge_config["groups"][group][url_pices[5]].update(put_dictionary)
                             if "on" in put_dictionary:
@@ -493,20 +482,20 @@ class S(BaseHTTPRequestHandler):
                             if bridge_config["lights_address"][light]["ip"] not in lightsIps:
                                 lightsIps.append(bridge_config["lights_address"][light]["ip"])
                                 processedLights.append(light)
-                                Thread(target=sendLightRequest, args=[light, put_dictionary]).start()
+                                Thread(target=sendLightRequest, args=[self.server.context['conf_obj'], light, put_dictionary]).start()
                         sleep(0.2) #give some time for the device to process the threaded request
                         #now send the rest of the requests in non threaded mode
                         for light in bridge_config["groups"][url_pices[4]]["lights"]:
                             if light not in processedLights:
-                                sendLightRequest(light, put_dictionary)
+                                sendLightRequest(self.server.context['conf_obj'], light, put_dictionary)
                 elif url_pices[3] == "lights": #state is applied to a light
                     for key in put_dictionary.keys():
                         if key in ["ct", "xy"]: #colormode must be set by bridge
                             bridge_config["lights"][url_pices[4]]["state"]["colormode"] = key
                         elif key in ["hue", "sat"]:
                             bridge_config["lights"][url_pices[4]]["state"]["colormode"] = "hs"
-                    updateGroupStats(url_pices[4])
-                    sendLightRequest(url_pices[4], put_dictionary)
+                    updateGroupStats(self.server.context['conf_obj'], url_pices[4])
+                    sendLightRequest(self.server.context['conf_obj'], url_pices[4], put_dictionary)
                 if not url_pices[4] == "0": #group 0 is virtual, must not be saved in bridge configuration
                     try:
                         bridge_config[url_pices[3]][url_pices[4]][url_pices[5]].update(put_dictionary)
@@ -534,7 +523,7 @@ class S(BaseHTTPRequestHandler):
             self.wfile.write(bytes(json.dumps([{"error": {"type": 1, "address": self.path, "description": "unauthorized user" }}],sort_keys=True, indent=4, separators=(',', ': ')), "utf8"))
 
     def do_DELETE(self):
-        bridge_config = self.server.context['bridge_config']
+        bridge_config = self.server.context['conf_obj'].bridge
         self._set_headers()
         url_pices = self.path.split('/')
         if url_pices[2] in bridge_config["config"]["whitelist"]:
@@ -561,9 +550,12 @@ class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
         #self.context = { .... }
 #    pass
 
-def run(https, bridge_config, server_class=ThreadingSimpleServer, handler_class=S):
-    context = {'bridge_config': bridge_config,
-               'mac': '%012x' % get_mac()}
+def run(https, conf_obj, sensors_state, server_class=ThreadingSimpleServer, handler_class=S):
+    context = {'conf_obj': conf_obj,
+               'mac': '%012x' % get_mac(),
+               'new_lights': {},
+               'sensors_state': sensors_state,
+               }
     if https:
         server_address = ('', 443)
         httpd = server_class(server_address, handler_class, context)

@@ -16,7 +16,9 @@ setup(name='huebridgeemulator',
           ]
       },
       license='Apache 2.0',
-      install_requires=["requests==2.19.1"],
+      install_requires=["requests==2.19.1",
+                        "PyYAML==3.12",
+                        ],
       classifiers=[
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',

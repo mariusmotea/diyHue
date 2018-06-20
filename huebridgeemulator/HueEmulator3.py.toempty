@@ -325,23 +325,6 @@ def sendLightRequest(light, data):
             bridge_config["lights"][light]["state"]["reachable"] = True
             print("LightRequest: " + url)
 
-def updateGroupStats(light): #set group stats based on lights status in that group
-    for group in bridge_config["groups"]:
-        if "lights" in bridge_config["groups"][group] and light in bridge_config["groups"][group]["lights"]:
-            for key, value in bridge_config["lights"][light]["state"].items():
-                if key in ["bri", "xy", "ct", "hue", "sat"]:
-                    bridge_config["groups"][group]["action"][key] = value
-            any_on = False
-            all_on = True
-            for group_light in bridge_config["groups"][group]["lights"]:
-                if bridge_config["lights"][light]["state"]["on"] == True:
-                    any_on = True
-                else:
-                    all_on = False
-            bridge_config["groups"][group]["state"] = {"any_on": any_on, "all_on": all_on,}
-            bridge_config["groups"][group]["action"]["on"] = any_on
-
-
 def scanForLights(): #scan for ESP8266 lights and strips
     Thread(target=discoverYeelight).start()
     #return all host that listen on port 80

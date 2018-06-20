@@ -91,7 +91,8 @@ def websocketClient():
     except KeyboardInterrupt:
         ws.close()
 
-def scanDeconz():
+def scanDeconz(conf_obj):
+    bridge_config = conf_obj.bridge
     if not bridge_config["deconz"]["enabled"]:
         if "username" not in bridge_config["deconz"]:
             try:
