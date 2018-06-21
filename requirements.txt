@@ -1,2 +1,4 @@
 requests==2.19.1
 PyYAML==3.12
+hug==2.4.0
+Jinja2==2.10

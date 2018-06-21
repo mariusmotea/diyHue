@@ -54,26 +54,32 @@ class S(BaseHTTPRequestHandler):
         bridge_config = self.server.context['conf_obj'].bridge
         mac = self.server.context['mac']
         if self.path == '/' or self.path == '/index.html':
+            # DONE
             self._set_headers()
             f = open('./web-ui/index.html')
             self.wfile.write(bytes(f.read(), "utf8"))
         elif self.path == '/config.js':
+            # DONE
             self._set_headers()
             #create a new user key in case none is available
             if len(bridge_config["config"]["whitelist"]) == 0:
                 bridge_config["config"]["whitelist"]["web-ui-" + str(random.randrange(0, 99999))] = {"create date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),"last use date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),"name": "WegGui User"}
             self.wfile.write(bytes('window.config = { API_KEY: "' + list(bridge_config["config"]["whitelist"])[0] + '",};', "utf8"))
         elif self.path.endswith((".css",".map",".png",".js")):
+            # DONE
             self._set_headers()
             f = open('./web-ui' + self.path, 'rb')
             self.wfile.write(f.read())
         elif self.path == '/description.xml':
+            # DONE
             self._set_headers()
             self.wfile.write(bytes(description(bridge_config["config"]["ipaddress"], mac), "utf8"))
         elif self.path == '/save':
+            # DONE
             saveConfig(bridge_config)
             self.wfile.write(bytes("config saved", "utf8"))
         elif self.path.startswith("/tradfri"): #setup Tradfri gateway
+            # TODO
             self._set_headers()
             get_parameters = parse_qs(urlparse(self.path).query)
             if "code" in get_parameters:
@@ -89,6 +95,7 @@ class S(BaseHTTPRequestHandler):
             else:
                 self.wfile.write(bytes(webformTradfri(), "utf8"))
         elif self.path.startswith("/milight"): #setup milight bulb
+            # TODO
             self._set_headers()
             get_parameters = parse_qs(urlparse(self.path).query)
             if "device_id" in get_parameters:
@@ -102,6 +109,7 @@ class S(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(webform_milight(), "utf8"))
         elif self.path.startswith("/hue"): #setup hue bridge
             if "linkbutton" in self.path: #Hub button emulated
+                # DONE
                 if self.headers['Authorization'] == None:
                     self._set_AUTHHEAD()
                     self.wfile.write(bytes('You are not authenticated', "utf8"))
@@ -133,7 +141,8 @@ class S(BaseHTTPRequestHandler):
                     self.wfile.write(bytes(self.headers['Authorization'], "utf8"))
                     self.wfile.write(bytes('not authenticated', "utf8"))
                     pass
-            else:
+            else    :
+                # DONE
                 self._set_headers()
                 get_parameters = parse_qs(urlparse(self.path).query)
                 if "ip" in get_parameters:
@@ -155,6 +164,7 @@ class S(BaseHTTPRequestHandler):
                 else:
                     self.wfile.write(bytes(webform_hue(), "utf8"))
         elif self.path.startswith("/deconz"): #setup imported deconz sensors
+            # TODO
             self._set_headers()
             get_parameters = parse_qs(urlparse(self.path).query)
             #clean all rules related to deconz Switches
@@ -202,6 +212,7 @@ class S(BaseHTTPRequestHandler):
                 scanDeconz()
             self.wfile.write(bytes(webformDeconz({"deconz": bridge_config["deconz"], "sensors": bridge_config["sensors"], "groups": bridge_config["groups"]}), "utf8"))
         elif self.path.startswith("/switch"): #request from an ESP8266 switch or sensor
+            # TODO
             self._set_headers()
             get_parameters = parse_qs(urlparse(self.path).query)
             pprint(get_parameters)
@@ -311,8 +322,11 @@ class S(BaseHTTPRequestHandler):
             print(self.data_string)
         url_pices = self.path.split('/')
         if len(url_pices) == 4: #data was posted to a location
+            print("U"*789)
+            print(url_pices)
             if url_pices[2] in bridge_config["config"]["whitelist"]:
                 if ((url_pices[3] == "lights" or url_pices[3] == "sensors") and not bool(post_dictionary)):
+                    # DONE
                     #if was a request to scan for lights of sensors
                     Thread(target=scanForLights, args=[self.server.context['conf_obj'], self.server.context['new_lights']]).start()
                     # TODO wait this thread but add a timeout
@@ -495,7 +509,6 @@ class S(BaseHTTPRequestHandler):
                                 lightsIps.append(bridge_config["lights_address"][light]["ip"])
                                 processedLights.append(light)
                                 current_light = self.server.context['conf_obj'].get_light(light)
-                                print("BBBB"*78)
                                 if current_light.manufacturername == "yeelight":
                                     Thread(target=current_light.send_request, args=[put_dictionary]).start()
                                 else:

@@ -13,6 +13,7 @@ from huebridgeemulator.tools.ssdp import ssdpSearch, ssdpBroadcast
 from huebridgeemulator.tools.scheduler import schedulerProcessor
 from huebridgeemulator.tools.light import syncWithLights
 from huebridgeemulator.http.web import run
+from huebridgeemulator.web.server import start
 
 
 
@@ -53,6 +54,7 @@ def main():
         Thread(target=syncWithLights, args=[conf_obj]).start()
         Thread(target=run, args=[False, conf_obj, sensors_state]).start()
         Thread(target=run, args=[True, conf_obj, sensors_state]).start()
+        Thread(target=start, args=[conf_obj, sensors_state]).start()
         while True:
             sleep(10)
     except Exception as e:

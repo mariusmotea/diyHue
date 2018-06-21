@@ -18,6 +18,8 @@ setup(name='huebridgeemulator',
       license='Apache 2.0',
       install_requires=["requests==2.19.1",
                         "PyYAML==3.12",
+                        "hug==2.4.0",
+                        "Jinja2==2.10",
                         ],
       classifiers=[
         'Programming Language :: Python :: 3.4',
