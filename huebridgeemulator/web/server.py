@@ -69,7 +69,6 @@ def linkbutton(request, response):
     bridge_config = request.context['conf_obj'].bridge
     template = get_template('webform_hue.html.j2')
     if request.params.get('ip'):
-#        import ipdb;ipdb.set_trace()
         url = "http://" + request.params.get('ip') + "/api/"
         data = json.dumps({"devicetype": "Hue Emulator"})
         query = requests.post(url, data=data)
@@ -200,8 +199,8 @@ def switch(request, response):  # request from an ESP8266 switch or sensor
                     rulesProcessor(bridge_config, sensor) #process the rules to perform the action configured by application
 
 
-@hug.get('/api/{uid}/{type}')
-def api_get_lights(uid, type, request, response):
+@hug.get('/api/{uid}')
+def api_get_lights(uid, request, response):
     """Print entire config."""
     bridge_config = request.context['conf_obj'].bridge
     if uid in bridge_config["config"]["whitelist"]:
@@ -216,6 +215,10 @@ def api_get_lights(uid, type, request, response):
                 "rules": bridge_config["rules"],
                 "sensors": bridge_config["sensors"],
                 "resourcelinks": bridge_config["resourcelinks"]}
+
+    else:
+        return [{"error": {"type": 1, "address": request.path, "description": "unauthorized user" }}]
+
 
 
 @hug.get('/api/{uid}/{type}/{light_id}')
@@ -266,7 +269,7 @@ def api_get_groups(uid, request, response):
                             "alert": "none",
                             "colormode": "xy"}
                 }
-        return [{"error": {"type": 1, "address": request.path, "description": "unauthorized user" }}]
+    return [{"error": {"type": 1, "address": request.path, "description": "unauthorized user" }}]
 
 @hug.get('/api/{uid}/info/{info}')
 def api_get_groups(uid, info, request, response):
@@ -275,14 +278,17 @@ def api_get_groups(uid, info, request, response):
         return ridge_config["capabilities"][info]
 
 
+
 # TODO
 # if url_pices[2] in bridge_config["config"]["whitelist"]:
 #        elif len(url_pices) == 6 or (len(url_pices) == 7 and url_pices[6] == ""):
 #            self.wfile.write(bytes(json.dumps(bridge_config[type][url_pices[4]][url_pices[5]]), "utf8"))
 
+
 @hug.get('/api/node')
 @hug.get('/api/config')
 @hug.get('/api/nouser')
+@hug.get('/api/nouser/config')
 def api_get_discover(request, response):
     """used by applications to discover the bridge."""
     bridge_config = request.context['conf_obj'].bridge
@@ -354,13 +360,18 @@ def api_lights(uid, type, body, request, response):
         print(json.dumps([{"error": {"type": 1, "address": request.path, "description": "unauthorized user" }}],sort_keys=True, indent=4, separators=(',', ': ')))
     
 @hug.post('/api')
+@hug.post('/api/')
 def api_registration(body, request, response):
     bridge_config = request.context['conf_obj'].bridge
     response = []
     # new registration by linkbutton
     post_dictionary = body
+    print(body)
+    print("QQQ1")
     if "devicetype" in post_dictionary and not bridge_config["config"]["linkbutton"]:
+        print("QQQ2")
         if int(bridge_config["linkbutton"]["lastlinkbuttonpushed"]) + 30 >= int(datetime.now().strftime("%s")):
+            print("QQQ3")
             username = hashlib.new('ripemd160', post_dictionary["devicetype"][0].encode('utf-8')).hexdigest()[:32]
             bridge_config["config"]["whitelist"][username] = {"last use date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),
                                                               "create date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),
@@ -370,9 +381,10 @@ def api_registration(body, request, response):
                 response[0]["success"]["clientkey"] = "E3B550C65F78022EFD9E52E28378583"
             print(json.dumps(response, sort_keys=True, indent=4, separators=(',', ': ')))
         else:
+            print("QQQ4")
             response = [{"error": {"type": 101, "address": request.path, "description": "link button not pressed" }}]
 
-    bridge_config["config"].save()
+    request.context['conf_obj'].save()
     return response
 
 #@hug.get('/api/{uid}/groups')

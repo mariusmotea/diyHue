@@ -447,7 +447,7 @@ class S(BaseHTTPRequestHandler):
                                 lightsIps.append(bridge_config["lights_address"][light]["ip"])
                                 processedLights.append(light)
                                 current_light = self.server.context['conf_obj'].get_resource("lights", light)
-                                if current_light.address.protocol == "yeelight":
+                                if current_light.address.protocol in ("yeelight", "hue"):
                                     Thread(target=current_light.send_request, args=[put_dictionary]).start()
                                 else:
                                     Thread(target=sendLightRequest, args=[self.server.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]]).start()
@@ -456,7 +456,7 @@ class S(BaseHTTPRequestHandler):
                         for light in bridge_config["scenes"][put_dictionary["scene"]]["lights"]:
                             if light not in processedLights:
                                 current_light = self.server.context['conf_obj'].get_resource("lights", light)
-                                if current_light.manufacturername in ["yeelight", "hue"]:
+                                if current_light.manufacturername in ("yeelight", "hue"):
                                     current_light.send_request(bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
                                 else:
                                     sendLightRequest(self.server.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
@@ -512,7 +512,7 @@ class S(BaseHTTPRequestHandler):
                                 lightsIps.append(bridge_config["lights_address"][light]["ip"])
                                 processedLights.append(light)
                                 current_light = self.server.context['conf_obj'].get_resource("lights", light)
-                                if current_light.address.protocol == "yeelight":
+                                if current_light.address.protocol in ("yeelight", "hue"):
                                     Thread(target=current_light.send_request, args=[put_dictionary]).start()
                                 else:
                                     Thread(target=sendLightRequest, args=[self.server.context['conf_obj'], light, put_dictionary]).start()
@@ -529,7 +529,7 @@ class S(BaseHTTPRequestHandler):
                             bridge_config["lights"][url_pices[4]]["state"]["colormode"] = "hs"
                     updateGroupStats(self.server.context['conf_obj'], url_pices[4])
                     current_light = self.server.context['conf_obj'].get_resource("lights", url_pices[4]) 
-                    if current_light.address.protocol == "yeelight":
+                    if current_light.address.protocol in ("yeelight", "hue"):
                         current_light.send_request(put_dictionary)
                     else:
                         sendLightRequest(self.server.context['conf_obj'], url_pices[4], put_dictionary)
