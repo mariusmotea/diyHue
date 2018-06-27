@@ -8,6 +8,8 @@ import sys
 import yaml
 
 from huebridgeemulator.device.yeelight.light import YeelightLight
+from huebridgeemulator.device.hue.light import HueLight
+from huebridgeemulator.scene import Scene
 
 
 def loadConfig(filename):  #load and configure alarm virtual light
@@ -52,6 +54,8 @@ class Config(object):
         self._mac = '%012x' % get_mac()
         # lights registry
         self.lights = {}
+        # scenes registry
+        self.scenes = {}
         # just added lights
         self._new_lights = {}
         # Load from file
@@ -71,11 +75,18 @@ class Config(object):
         # TODO add yaml
         with open(self.filepath, 'r') as cfs:
             self.bridge = json.load(cfs)
-        for index, light in self.bridge['lights'].items():
-            if light['manufacturername'] == "yeelight":
-                address = self.bridge['lights_address'][index] 
-                new_light = YeelightLight(index=index, address=address, **light)
-                self.lights[index] = new_light
+            for index, light_address in self.bridge['lights_address'].items():
+                light = self.bridge['lights'][index]
+                if light_address['protocol'] == 'yeelight':
+                    new_light = YeelightLight(index=index, address=light_address, raw=light)
+                    self.lights[index] = new_light
+                elif light_address['protocol'] == 'hue':
+                    new_light = HueLight(index=index, address=light_address, raw=light)
+                    self.lights[index] = new_light
+            for index, scene in self.bridge['scenes'].items():
+                self.scenes[index] = Scene(scene)
+            print("L"*455)
+            print(self.lights)
 
     def save(self):
         """Write configuration from file"""
@@ -101,9 +112,17 @@ class Config(object):
     def clear_new_lights(self):
         self._new_lights.clear()
 
-    def get_light(self, index):
+    def get_resource(self, type, index):
         """Get light from index"""
-        return self.lights[index]
+        print("GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG")
+        print(self.bridge['lights'])
+        print(self.lights)
+        print(index)
+        print(type)
+        if type not in ["scenes", "lights"]:
+            raise Exception("QQQQQQQQ")
+        return getattr(self, type)[index]
+#        return self.lights[index]
 
     def get_json_lights(self):
         """Return all lights in JSON format"""

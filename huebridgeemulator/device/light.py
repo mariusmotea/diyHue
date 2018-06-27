@@ -4,35 +4,38 @@ import json
 
 class Light(object):
 
-    def __init__(self, index, type, name, uniqueid, modelid, manufacturername, swversion, state, address):
+    def __init__(self, index, address, raw):
         self.index = index
-        # ???
-        self.type = type
-        # name
-        self.name = name
-        # example: 4a:e0:ad:7f:cf:52-1
-        self.uniqueid = uniqueid
-        # model id
-        self.modelid = modelid
-        # Can we use something else ?
-        self.manufacturername = manufacturername
-        # ???
-        self.swversion = swversion
         # address
-        self.address = LightAddress(address["id"], address["ip"], "yeelight")
+        self.address = None
+        self.set_address(address)
         # state
-        self.state = LightState(state)
+        self.state = LightState(raw['state'])
+        # config
+        self.read_config(raw)
+
+        # ???
+#        self.type = type
+        # name
+ #       self.name = name
+        # example: 4a:e0:ad:7f:cf:52-1
+  #      self.uniqueid = uniqueid
+        # model id
+   #     self.modelid = modelid
+        # Can we use something else ?
+    #    self.manufacturername = manufacturername
+        # ???
+     #   self.swversion = swversion
+
+    def read_config(self, config):
+        raise NotImplementedError
 
     def serialize(self):
-        ret = {"type": self.type,
-               "name": self.name,
-               "uniqueid": self.uniqueid,
-               "modelid": self.modelid,
-               "manufacturername": self.manufacturername,
-               "swversion": self.swversion,
-               "state": self.state.serialize(),
-               }
-        return ret
+        raise NotImplementedError
+
+    def set_address(self, address):
+        # address
+        raise NotImplementedError
 
     def toJSON(self):
         return json.dumps(self.serialize())
@@ -53,17 +56,17 @@ class LightState(object):
         # ??? (int)
         self.ct = raw_state['ct']
         # effect (str)
-        self.effect = raw_state['effect']
+        self.effect = raw_state.get('effect')
         # ??? (int)
-        self.hue = raw_state['hue']
+        self.hue = raw_state.get('hue')
         # (bool)
         self.on = raw_state['on']
         # (bool)
         self.reachable = raw_state['reachable']
         # ???
-        self.sat = raw_state['sat']
+        self.sat = raw_state.get('sat')
         # list(int, int)
-        self.xy = raw_state['xy']
+        self.xy = raw_state.get('xy')
 
     def serialize(self):
         ret = {"alert": self.alert,
@@ -75,18 +78,17 @@ class LightState(object):
                "on": self.on,
                "reachable": self.reachable,
                "sat": self.sat,
-               "xy": self.xy,
                }
+        if self.xy is not None:
+            ret['xy'] = self.xy
+        if self.effect is not None:
+            ret['effect'] = self.effect
+        if self.sat is not None:
+            ret['sat'] = self.sat
         return ret
 
 class LightAddress(object):
 
-
-    def __init__(self, id, ip, protocol):
-
-        # Example: "0x00000000033447b4"
-        self.id = id
-        # Example: "192.168.2.161",
-        self.ip = ip
+    def __init__(self, address):
         # Example: "yeelight"
-        self.protocol = protocol
+        self.protocol = address["protocol"]

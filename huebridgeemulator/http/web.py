@@ -164,7 +164,7 @@ class S(BaseHTTPRequestHandler):
                 else:
                     self.wfile.write(bytes(webform_hue(), "utf8"))
         elif self.path.startswith("/deconz"): #setup imported deconz sensors
-            # TODO
+            # DONE
             self._set_headers()
             get_parameters = parse_qs(urlparse(self.path).query)
             #clean all rules related to deconz Switches
@@ -255,7 +255,10 @@ class S(BaseHTTPRequestHandler):
                             bridge_config["sensors"][sensor]["state"].update({"lightlevel":int(get_parameters["lightlevel"][0]), "dark":True if get_parameters["dark"][0] == "true" else False, "daylight":True if get_parameters["daylight"][0] == "true" else False, "lastupdated": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")})
                             rulesProcessor(sensor) #process the rules to perform the action configured by application
         else:
+            # TODO
+#            print("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB" * 4)
             url_pices = self.path.split('/')
+#            print(url_pices)
             if len(url_pices) < 3:
                 #self._set_headers_error()
                 self.send_error(404, 'not found')
@@ -293,7 +296,7 @@ class S(BaseHTTPRequestHandler):
                     elif url_pices[3] == "info":
                         self.wfile.write(bytes(json.dumps(bridge_config["capabilities"][url_pices[4]]), "utf8"))
                     else:
-                        self.wfile.write(bytes(self.server.context['conf_obj'].get_light(url_pices[4]).toJSON(), "utf8"))
+                        self.wfile.write(bytes(self.server.context['conf_obj'].get_resource(url_pices[3], url_pices[4]).toJSON(), "utf8"))
 #                        self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]][url_pices[4]]), "utf8"))
                 elif len(url_pices) == 6 or (len(url_pices) == 7 and url_pices[6] == ""):
                     self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]][url_pices[4]][url_pices[5]]), "utf8"))
@@ -326,7 +329,7 @@ class S(BaseHTTPRequestHandler):
             print(url_pices)
             if url_pices[2] in bridge_config["config"]["whitelist"]:
                 if ((url_pices[3] == "lights" or url_pices[3] == "sensors") and not bool(post_dictionary)):
-                    # DONE
+                    # DONe
                     #if was a request to scan for lights of sensors
                     Thread(target=scanForLights, args=[self.server.context['conf_obj'], self.server.context['new_lights']]).start()
                     # TODO wait this thread but add a timeout
@@ -443,8 +446,8 @@ class S(BaseHTTPRequestHandler):
                             if bridge_config["lights_address"][light]["ip"] not in lightsIps:
                                 lightsIps.append(bridge_config["lights_address"][light]["ip"])
                                 processedLights.append(light)
-                                current_light = self.server.context['conf_obj'].get_light(light)
-                                if current_light.manufacturername == "yeelight":
+                                current_light = self.server.context['conf_obj'].get_resource("lights", light)
+                                if current_light.address.protocol == "yeelight":
                                     Thread(target=current_light.send_request, args=[put_dictionary]).start()
                                 else:
                                     Thread(target=sendLightRequest, args=[self.server.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]]).start()
@@ -452,8 +455,8 @@ class S(BaseHTTPRequestHandler):
                         #now send the rest of the requests in non threaded mode
                         for light in bridge_config["scenes"][put_dictionary["scene"]]["lights"]:
                             if light not in processedLights:
-                                current_light = self.server.context['conf_obj'].get_light(light)
-                                if current_light.manufacturername == "yeelight":
+                                current_light = self.server.context['conf_obj'].get_resource("lights", light)
+                                if current_light.manufacturername in ["yeelight", "hue"]:
                                     current_light.send_request(bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
                                 else:
                                     sendLightRequest(self.server.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
@@ -508,8 +511,8 @@ class S(BaseHTTPRequestHandler):
                             if bridge_config["lights_address"][light]["ip"] not in lightsIps:
                                 lightsIps.append(bridge_config["lights_address"][light]["ip"])
                                 processedLights.append(light)
-                                current_light = self.server.context['conf_obj'].get_light(light)
-                                if current_light.manufacturername == "yeelight":
+                                current_light = self.server.context['conf_obj'].get_resource("lights", light)
+                                if current_light.address.protocol == "yeelight":
                                     Thread(target=current_light.send_request, args=[put_dictionary]).start()
                                 else:
                                     Thread(target=sendLightRequest, args=[self.server.context['conf_obj'], light, put_dictionary]).start()
@@ -525,8 +528,8 @@ class S(BaseHTTPRequestHandler):
                         elif key in ["hue", "sat"]:
                             bridge_config["lights"][url_pices[4]]["state"]["colormode"] = "hs"
                     updateGroupStats(self.server.context['conf_obj'], url_pices[4])
-                    current_light = self.server.context['conf_obj'].get_light(url_pices[4]) 
-                    if current_light.manufacturername == "yeelight":
+                    current_light = self.server.context['conf_obj'].get_resource("lights", url_pices[4]) 
+                    if current_light.address.protocol == "yeelight":
                         current_light.send_request(put_dictionary)
                     else:
                         sendLightRequest(self.server.context['conf_obj'], url_pices[4], put_dictionary)

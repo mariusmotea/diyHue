@@ -74,15 +74,16 @@ def discoverYeelight(conf_obj, new_lights):
                     modelid = "LTW001"
                 new_light_id = conf_obj.nextFreeId("lights")
                 address = {"ip": properties["ip"], "id": properties["id"], "protocol": "yeelight"}
+                raw_light = {"type": LIGHT_TYPES[modelid]["type"],
+                             "name": light_name,
+                             "uniqueid": "4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1",
+                             "modelid": modelid,
+                             "manufacturername": "yeelight",
+                             "state": LIGHT_TYPES[modelid]["state"],
+                             "swversion": LIGHT_TYPES[modelid]["swversion"]}
                 new_light = YeelightLight(index=new_light_id,
-                                          type=LIGHT_TYPES[modelid]["type"],
-                                          name=light_name,
-                                          uniqueid="4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1",
-                                          modelid=modelid,
-                                          manufacturername="Philips",
-                                          swversion=LIGHT_TYPES[modelid]["swversion"],
-                                          state=LIGHT_TYPES[modelid]["state"],
                                           address=address,
+                                          raw=raw_light,
                                           )
                 conf_obj.add_new_light(new_light)
                 bridge_config["lights"][new_light_id] = {"state": LIGHT_TYPES[modelid]["state"], "type": LIGHT_TYPES[modelid]["type"], "name": light_name, "uniqueid": "4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1", "modelid": modelid, "manufacturername": "Philips", "swversion": LIGHT_TYPES[modelid]["swversion"]}

@@ -165,7 +165,7 @@ def scanForLights(conf_obj, new_lights): #scan for ESP8266 lights and strips
                                 new_lights.update({new_light_id: {"name": light_name if x == 1 else light_name + " " + str(x)}})
                                 conf_obj.bridge["lights_address"][new_light_id] = {"ip": ip, "light_nr": x, "protocol": "native"}
         except Exception as exp:
-            raise exp
+#            raise exp
             print("ip " + ip + " is unknow device")
     scanDeconz(conf_obj)
     # TODO activatethis
