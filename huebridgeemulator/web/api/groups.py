@@ -163,7 +163,12 @@ def api_put_groups_id_action(uid, resource_id, body, request, response):
             for light in bridge_config["lights"].keys():
                 if "virtual_light" not in bridge_config["alarm_config"] or light != bridge_config["alarm_config"]["virtual_light"]:
                     bridge_config["lights"][light]["state"].update(put_dictionary)
-                    sendLightRequest(request.context['conf_obj'], light, put_dictionary)
+                    current_light = request.context['conf_obj'].get_resource("lights", light)
+                    if current_light.manufacturername in ("yeelight", "hue"):
+                        current_light.send_request(put_dictionary)
+                    else:
+                        sendLightRequest(request.context['conf_obj'], light, put_dictionary)
+
             for group in bridge_config["groups"].keys():
                 bridge_config["groups"][group][url_pices[5]].update(put_dictionary)
                 if "on" in put_dictionary:
