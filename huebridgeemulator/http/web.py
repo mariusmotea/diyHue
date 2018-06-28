@@ -51,6 +51,7 @@ class S(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+#        import ipdb;ipdb.set_trace()
         bridge_config = self.server.context['conf_obj'].bridge
         mac = self.server.context['mac']
         if self.path == '/' or self.path == '/index.html':
@@ -256,7 +257,8 @@ class S(BaseHTTPRequestHandler):
                             rulesProcessor(sensor) #process the rules to perform the action configured by application
         else:
             # TODO
-#            print("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB" * 4)
+            print("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB" * 4)
+            print(self.path)
             url_pices = self.path.split('/')
 #            print(url_pices)
             if len(url_pices) < 3:
@@ -270,14 +272,17 @@ class S(BaseHTTPRequestHandler):
                 bridge_config["config"]["localtime"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
                 bridge_config["config"]["whitelist"][url_pices[2]]["last use date"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
                 if len(url_pices) == 3 or (len(url_pices) == 4 and url_pices[3] == ""): #print entire config
+                    print("FFF1")
                     self.wfile.write(bytes(json.dumps({"lights": bridge_config["lights"], "groups": bridge_config["groups"], "config": bridge_config["config"], "scenes": bridge_config["scenes"], "schedules": bridge_config["schedules"], "rules": bridge_config["rules"], "sensors": bridge_config["sensors"], "resourcelinks": bridge_config["resourcelinks"]}), "utf8"))
                 elif len(url_pices) == 4 or (len(url_pices) == 5 and url_pices[4] == ""): #print specified object config
+                    print("FFF2")
                     if url_pices[3] == "lights":
                         self.wfile.write(bytes(self.server.context['conf_obj'].get_json_lights(), "utf8"))
 #                        self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]]), "utf8"))
                     else:
                         self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]]), "utf8"))
                 elif len(url_pices) == 5 or (len(url_pices) == 6 and url_pices[5] == ""):
+                    print("FFF3")
                     if url_pices[4] == "new": #return new lights and sensors only
 #                        self.server.context['new_lights'].update({"lastscan": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")})
                         print(self.server.context['conf_obj'].get_new_lights())
@@ -299,6 +304,7 @@ class S(BaseHTTPRequestHandler):
                         self.wfile.write(bytes(self.server.context['conf_obj'].get_resource(url_pices[3], url_pices[4]).toJSON(), "utf8"))
 #                        self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]][url_pices[4]]), "utf8"))
                 elif len(url_pices) == 6 or (len(url_pices) == 7 and url_pices[6] == ""):
+                    print("FFF4")
                     self.wfile.write(bytes(json.dumps(bridge_config[url_pices[3]][url_pices[4]][url_pices[5]]), "utf8"))
             elif (url_pices[2] == "nouser" or url_pices[2] == "none" or url_pices[2] == "config"): #used by applications to discover the bridge
                 self.wfile.write(bytes(json.dumps({"name": bridge_config["config"]["name"],"datastoreversion": 59, "swversion": bridge_config["config"]["swversion"], "apiversion": bridge_config["config"]["apiversion"], "mac": bridge_config["config"]["mac"], "bridgeid": bridge_config["config"]["bridgeid"], "factorynew": False, "modelid": bridge_config["config"]["modelid"]}), "utf8"))
@@ -307,6 +313,7 @@ class S(BaseHTTPRequestHandler):
 
 
     def do_POST(self):
+#        import ipdb;ipdb.set_trace()
         bridge_config = self.server.context['conf_obj'].bridge
         self._set_headers()
         print ("in post method")
@@ -396,6 +403,7 @@ class S(BaseHTTPRequestHandler):
         #saveConfig(bridge_config)
 
     def do_PUT(self):
+#        import ipdb;ipdb.set_trace()
         bridge_config = self.server.context['conf_obj'].bridge
         self._set_headers()
         print ("in PUT method")
@@ -560,6 +568,7 @@ class S(BaseHTTPRequestHandler):
             self.wfile.write(bytes(json.dumps([{"error": {"type": 1, "address": self.path, "description": "unauthorized user" }}],sort_keys=True, indent=4, separators=(',', ': ')), "utf8"))
 
     def do_DELETE(self):
+#        import ipdb;ipdb.set_trace()
         bridge_config = self.server.context['conf_obj'].bridge
         self._set_headers()
         url_pices = self.path.split('/')
