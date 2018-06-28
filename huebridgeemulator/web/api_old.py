@@ -52,21 +52,20 @@ def api_get_config(uid, request, response):
         return [{"error": {"type": 1, "address": request.path, "description": "unauthorized user" }}]
 
 
-
-@hug.get('/api/{uid}/{type}/{light_id}')
-def api_get_light(uid, type, light_id, request, response):
+@hug.get('/api/{uid}/{resource_type}/{resource_id}')
+def api_get_light(uid, resource_type, resource_id, request, response):
     """print specified object config."""
     print("api_get_lightapi_get_lightapi_get_lightapi_get_light")
     bridge_config = request.context['conf_obj'].bridge
     if uid in bridge_config["config"]["whitelist"]:
-        if type == "lights":
+        if resource_type == "lights":
             request.context['conf_obj'].get_json_lights()
         else:
-            return bridge_config[type]
+            return bridge_config[resource_type]
 
 
-@hug.get('/api/{uid}/{type}/new')
-def api_new_light(uid, type, request, response):
+@hug.get('/api/{uid}/{resource_type}/new')
+def api_new_light(uid, resource_type, request, response):
     """return new lights and sensors only."""
     print("api_new_lightapi_new_lightapi_new_lightapi_new_lightapi_new_lightapi_new_light")
     bridge_config = request.context['conf_obj'].bridge
@@ -77,14 +76,14 @@ def api_new_light(uid, type, request, response):
         return response
 
 
-@hug.get('/api/{uid}/{type}')
-def api_get_lights(uid, type, request, response):
+@hug.get('/api/{uid}/{resource_type}')
+def api_get_lights(uid, resource_type, request, response):
     print("api_get_lightsapi_get_lightsapi_get_lightsapi_get_lightsapi_get_lights")
     if type == 'lights':
         return request.context['conf_obj'].get_json_lights()
     else:
         bridge_config = request.context['conf_obj'].bridge
-        return bridge_config[type]
+        return bridge_config[resource_type]
 
 @hug.get('/api/{uid}/groups/0')
 def api_get_groups(uid, request, response):
@@ -156,55 +155,53 @@ def updater(request, response):
     return {}
 
 
-#@hug.post('/api/{uid}/sensors')
-#@hug.post('/api/{uid}/lights')
-#@hug.post('/api/{uid}/groups')
-#@hug.post('/api/{uid}/scenes')
-@hug.post('/api/{uid}/{type}')
-def api_lights(uid, type, body, request, response):
-    print("api_lightsapi_lightsapi_lightsapi_lightsapi_lightsapi_lightsapi_lightsapi_lights")
+@hug.post('/api/{uid}/{resource_type}')
+def api_lights(uid, resource_type, body, request, response):
     bridge_config = request.context['conf_obj'].bridge
-    print("MMMMMMMMMMMMMMMMMMMMMMMMM")
     if uid in bridge_config["config"]["whitelist"]:
-        if type == "lights" or type == "sensor" and not bool(body):
+        if resource_type == "lights" or resource_type == "sensor" and not bool(body):
             Thread(target=scanForLights,
                    args=[request.context['conf_obj'],
                          request.context['new_lights']]).start()
             # TODO wait this thread but add a timeout
             time.sleep(7)
             return [{"success": {"/" + uid: "Searching for new devices"}}]
-        elif type == "":
+        elif resource_type == "":
             # WHY ???
             return [{"success": {"clientkey": "E3B550C65F78022EFD9E52E28378583"}}]
         else: #create object
             post_dictionary = body
+            print("create objectcreate objectcreate objectcreate objectcreate object")
+            print(request.path)
+            print(resource_type)
             # find the first unused id for new object
-            new_object_id = request.context['conf_obj'].nextFreeId(type)
-            if type == "scenes":
+            new_object_id = request.context['conf_obj'].nextFreeId(resource_type)
+            if resource_type == "scenes":
                 post_dictionary.update({"lightstates": {}, "version": 2, "picture": "", "lastupdated": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"), "owner" :uid})
                 if "locked" not in post_dictionary:
                     post_dictionary["locked"] = False
-            elif type == "groups":
+            elif resource_type == "groups":
                 post_dictionary.update({"action": {"on": False}, "state": {"any_on": False, "all_on": False}})
-            elif type == "schedules":
+            elif resource_type == "schedules":
                 post_dictionary.update({"created": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"), "time": post_dictionary["localtime"]})
                 if post_dictionary["localtime"].startswith("PT"):
                     post_dictionary.update({"starttime": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")})
                 if not "status" in post_dictionary:
                     post_dictionary.update({"status": "enabled"})
-            elif type == "rules":
+            elif resource_type == "rules":
                 post_dictionary.update({"owner": uid, "lasttriggered" : "none", "creationtime": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"), "timestriggered": 0})
                 if not "status" in post_dictionary:
                     post_dictionary.update({"status": "enabled"})
-            elif type == "sensors":
+            elif resource_type == "sensors":
                 if "state" not in post_dictionary:
                     post_dictionary["state"] = {}
                 if post_dictionary["modelid"] == "PHWA01":
                     post_dictionary.update({"state": {"status": 0}})
-            elif type == "resourcelinks":
+            elif resource_type == "resourcelinks":
                 post_dictionary.update({"owner" :uid})
-            generateSensorsState(bridge_config, self.server.context['sensors_state'])
-            bridge_config[type][new_object_id] = post_dictionary
+            generateSensorsState(bridge_config, request.context['sensors_state'])
+            bridge_config[resource_type][new_object_id] = post_dictionary
+            request.context['conf_obj'].save()
             print(json.dumps([{"success": {"id": new_object_id}}], sort_keys=True, indent=4, separators=(',', ': ')))
             return [{"success": {"id": new_object_id}}]
     else:
@@ -218,7 +215,6 @@ def api_registration(body, request, response):
     response = []
     # new registration by linkbutton
     post_dictionary = body
-    print(body)
     print("QQQ1")
     if "devicetype" in post_dictionary:
         if bridge_config["config"]["linkbutton"]: #  this must be a new device registration
@@ -254,6 +250,25 @@ def api_registration(body, request, response):
 #def api_lights(request, response):
 #    print("/api/{uid}/groups")
 #    return {}
+
+
+
+@hug.delete('/api/{uid}/{resource_type}/{resource_id}')
+def delete_resource(uid, resource_type, resource_id, request, response):
+    bridge_config = request.context['conf_obj'].bridge
+    if uid in bridge_config["config"]["whitelist"]:
+        del bridge_config[resource_type][resource_id]
+        if resource_type == "lights":
+            del bridge_config["lights_address"][resource_id]
+            for light in list(bridge_config["deconz"]["lights"]):
+                if bridge_config["deconz"]["lights"][light]["bridgeid"] == resource_id:
+                    del bridge_config["deconz"]["lights"][light]
+        if resource_type == "sensors":
+            for sensor in list(bridge_config["deconz"]["sensors"]):
+                if bridge_config["deconz"]["sensors"][sensor]["bridgeid"] == resource_id:
+                    del bridge_config["deconz"]["sensors"][sensor]
+        request.context['conf_obj'].save()
+        return [{"success": "/" + resource_type + "/" + resource_id + " deleted."}]
 
 
 

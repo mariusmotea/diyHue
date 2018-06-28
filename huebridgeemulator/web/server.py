@@ -12,14 +12,20 @@ from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.web.templates import get_template
 from huebridgeemulator.http.websocket import scanDeconz
 from huebridgeemulator.web import ui
-from huebridgeemulator.web import api
+from huebridgeemulator.web.api import scenes
+from huebridgeemulator.web.api import common
+from huebridgeemulator.web.api import config
+from huebridgeemulator.web.api import groups
+from huebridgeemulator.web.api import lights
+from huebridgeemulator.web.api import sensors
+
 
 
 
 
 @hug.extend_api()
 def with_other_apis():
-    return [api, ui]
+    return [ui, scenes, common, config, groups, lights, sensors]
 
 
 def start(conf_obj, sensors_state):

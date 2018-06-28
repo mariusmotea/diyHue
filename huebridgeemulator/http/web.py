@@ -409,6 +409,7 @@ class S(BaseHTTPRequestHandler):
         print ("in PUT method")
         self.data_string = self.rfile.read(int(self.headers['Content-Length']))
         put_dictionary = json.loads(self.data_string.decode('utf8'))
+        print(put_dictionary)
         url_pices = self.path.split('/')
         print(self.path)
         print(self.data_string)
