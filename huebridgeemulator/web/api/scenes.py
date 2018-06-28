@@ -78,10 +78,33 @@ def api_put_scenes_id_light_id(uid, resource_id, light_id, body, request, respon
         # Those lines are useless because of the next one ...
         bridge_config['scenes'][resource_id]['lightstates'][light_id] = put_dictionary
         response_location = "/scenes/" + resource_id + "/lightstates/" + light_id + "/"
-    response_dictionary = []
-    for key, value in put_dictionary.items():
-        response_dictionary.append({"success":{response_location + key: value}})
-    print(json.dumps(response_dictionary, sort_keys=True, indent=4, separators=(',', ': ')))
-    request.context['conf_obj'].save()
-    return response_dictionary
+        response_dictionary = []
+        for key, value in put_dictionary.items():
+            response_dictionary.append({"success":{response_location + key: value}})
+        print(json.dumps(response_dictionary, sort_keys=True, indent=4, separators=(',', ': ')))
+        request.context['conf_obj'].save()
+        return response_dictionary
+
+@hug.put('/api/{uid}/scenes/{resource_id}')
+def api_put_scenes_id_light_id(uid, resource_id, body, request, response):
+    print("api_put_scenes_id")
+    bridge_config = request.context['conf_obj'].bridge
+    put_dictionary = body
+    if uid in bridge_config["config"]["whitelist"]:
+        if "storelightstate" in put_dictionary:
+            for light in bridge_config["scenes"][resource_id]["lightstates"]:
+                bridge_config["scenes"][resource_id]["lightstates"][light] = {}
+                bridge_config["scenes"][resource_id]["lightstates"][light]["on"] = bridge_config["lights"][light]["state"]["on"]
+                bridge_config["scenes"][resource_id]["lightstates"][light]["bri"] = bridge_config["lights"][light]["state"]["bri"]
+                if bridge_config["lights"][light]["state"]["colormode"] in ["ct", "xy"]:
+                    bridge_config["scenes"][resource_id]["lightstates"][light][bridge_config["lights"][light]["state"]["colormode"]] = bridge_config["lights"][light]["state"][bridge_config["lights"][light]["state"]["colormode"]]
+                elif bridge_config["lights"][light]["state"]["colormode"] == "hs" and "hue" in bridge_config["scenes"][resource_id]["lightstates"][light]:
+                    bridge_config["scenes"][resource_id]["lightstates"][light]["hue"] = bridge_config["lights"][light]["state"]["hue"]
+                    bridge_config["scenes"][resource_id]["lightstates"][light]["sat"] = bridge_config["lights"][light]["state"]["sat"]
+            bridge_config["scenes"][resource_id].update(put_dictionary)
+
+        response_dictionary = []
+        for key, value in put_dictionary.items():
+            response_dictionary.append({"success":{response_location + key: value}})
+        return response_dictionary
 
