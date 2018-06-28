@@ -14,15 +14,18 @@ from huebridgeemulator.tools.scheduler import schedulerProcessor
 from huebridgeemulator.tools.light import syncWithLights
 from huebridgeemulator.http.web import run
 from huebridgeemulator.web.server import start
-
+from huebridgeemulator.logger import main_logger, LOG_LEVELS
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config-file',
                         required=True, help='Config file')
+    parser.add_argument('-l', '--log-level', choices=LOG_LEVELS,
+                        default="WARNING", help='Log Level')
     args = parser.parse_args()
-
+    # Set log level
+    main_logger.setLevel(args.log_level)
 
     update_lights_on_startup = False # if set to true all lights will be updated with last know state on startup.
 

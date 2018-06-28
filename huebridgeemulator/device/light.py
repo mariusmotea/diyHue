@@ -1,5 +1,6 @@
 import json
 
+from huebridgeemulator.logger import light_logger
 
 
 class Light(object):
@@ -13,6 +14,8 @@ class Light(object):
         self.state = LightState(raw['state'])
         # config
         self.read_config(raw)
+        # logger
+        self.logger = light_logger.getChild(self.index)
 
         # ???
 #        self.type = type

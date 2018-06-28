@@ -14,8 +14,8 @@ from huebridgeemulator.http.websocket import scanDeconz
 from huebridgeemulator.tools.light import scanForLights
 from threading import Thread
 import time
-
 import huebridgeemulator.web.ui
+from huebridgeemulator.web.tools import authorized 
 
 
 @hug.get('/description.xml',  output=hug.output_format.html)
@@ -29,35 +29,29 @@ def hue_description(request, response):
                             'mac': request.context['mac']})
 
 
-@hug.get('/api/{uid}')
-@hug.get('/api/{uid}/')
+@hug.get('/api/{uid}', requires=authorized)
+@hug.get('/api/{uid}/', requires=authorized)
 def api_get(uid, request, response):
     """Print entire config."""
     bridge_config = request.context['conf_obj'].bridge
-    if uid in bridge_config["config"]["whitelist"]:
-        bridge_config["config"]["UTC"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
-        bridge_config["config"]["localtime"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        bridge_config["config"]["whitelist"][uid]["last use date"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        return {"lights": bridge_config["lights"],
-                "groups": bridge_config["groups"],
-                "config": bridge_config["config"],
-                "scenes": bridge_config["scenes"],
-                "schedules": bridge_config["schedules"],
-                "rules": bridge_config["rules"],
-                "sensors": bridge_config["sensors"],
-                "resourcelinks": bridge_config["resourcelinks"]}
-
-    else:
-        return [{"error": {"type": 1, "address": request.path, "description": "unauthorized user" }}]
+    bridge_config["config"]["UTC"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+    bridge_config["config"]["localtime"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    bridge_config["config"]["whitelist"][uid]["last use date"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    return {"lights": bridge_config["lights"],
+            "groups": bridge_config["groups"],
+            "config": bridge_config["config"],
+            "scenes": bridge_config["scenes"],
+            "schedules": bridge_config["schedules"],
+            "rules": bridge_config["rules"],
+            "sensors": bridge_config["sensors"],
+            "resourcelinks": bridge_config["resourcelinks"]}
 
 
-
-@hug.get('/api/{uid}/info/{info}')
+@hug.get('/api/{uid}/info/{info}', requires=authorized)
 def api_get_info(uid, info, request, response):
     print("api_get_groupsapi_get_groupsapi_get_groupsapi_get_groupsapi_get_groupsapi_get_groups")
     bridge_config = request.context['conf_obj'].bridge
-    if uid in bridge_config["config"]["whitelist"]:
-        return ridge_config["capabilities"][info]
+    return ridge_config["capabilities"][info]
 
 
 @hug.post('/updater')
