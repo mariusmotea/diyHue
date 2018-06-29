@@ -18,6 +18,7 @@ from huebridgeemulator.logger import main_logger, LOG_LEVELS
 
 
 def main():
+    """Main and entrypoitn function."""
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config-file',
                         required=True, help='Config file')
@@ -29,16 +30,10 @@ def main():
 
     update_lights_on_startup = False # if set to true all lights will be updated with last know state on startup.
 
-    mac = '%012x' % get_mac()
-
-    run_service = True
-
-    new_lights = {}
-    sensors_state = {}
-
     light_types = {"LCT015": {"state": {"on": False, "bri": 200, "hue": 0, "sat": 0, "xy": [0.0, 0.0], "ct": 461, "alert": "none", "effect": "none", "colormode": "ct", "reachable": True}, "type": "Extended color light", "swversion": "1.29.0_r21169"}, "LST001": {"state": {"on": False, "bri": 200, "hue": 0, "sat": 0, "xy": [0.0, 0.0], "ct": 461, "alert": "none", "effect": "none", "colormode": "ct", "reachable": True}, "type": "Color light", "swversion": "66010400"}, "LWB010": {"state": {"on": False, "bri": 254,"alert": "none", "reachable": True}, "type": "Dimmable light", "swversion": "1.15.0_r18729"}, "LTW001": {"state": {"on": False, "colormode": "ct", "alert": "none", "reachable": True, "bri": 254, "ct": 230}, "type": "Color temperature light", "swversion": "5.50.1.19085"}, "Plug 01": {"state": {"on": False, "alert": "none", "reachable": True}, "type": "On/Off plug-in unit", "swversion": "V1.04.12"}}
 
 
+    # Load config
     conf_obj = Config(args.config_file)
     bridge_config = conf_obj.bridge
 
@@ -65,7 +60,7 @@ def main():
     finally:
         run_service = False
         saveConfig('/home/tcohen/perso/gits/github.com/mariusmotea/diyHue/config.json', bridge_config)
-        print ('config saved')
+        print('config saved')
 
 
 if __name__ == "__main__":
