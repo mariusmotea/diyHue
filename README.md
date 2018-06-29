@@ -6,12 +6,12 @@ This project emulates a Philips Hue Bridge that is able to control ZigBee lights
 
 ### New folder structure
 
-How to test it
+How to test it:
 ```
 virtualenv -p `which python3` env
 source env/bin/activate
 python setup.py develop
-sudo env/bin/huebridgeemulator 
+sudo env/bin/huebridgeemulator -c config.json -l DEBUG
 ```
 
 
