@@ -114,19 +114,17 @@ class Config(object):
 
     def get_resource(self, type, index):
         """Get light from index"""
-        print("GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG")
-        print(self.bridge['lights'])
-        print(self.lights)
-        print(index)
-        print(type)
         if type not in ["scenes", "lights"]:
-            raise Exception("QQQQQQQQ")
+            raise Exception("Bad resources type {}".format(type))
         return getattr(self, type)[index]
-#        return self.lights[index]
 
-    def get_json_lights(self):
+    def get_lights(self):
         """Return all lights in JSON format"""
         ret = {}
         for index, light in self.lights.items():
             ret[index] = light.serialize()
-        return json.dumps(ret)
+        return ret
+
+    def get_json_lights(self):
+        """Return all lights in JSON format"""
+        return json.dumps(self.get_lights())

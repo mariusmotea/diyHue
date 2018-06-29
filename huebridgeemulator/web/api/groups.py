@@ -22,7 +22,6 @@ from huebridgeemulator.web.tools import authorized
 @hug.get('/api/{uid}/groups/{resource_id}', requires=authorized)
 def api_get_groups_id(uid, resource_id, request, response):
     """print specified object config."""
-    print("api_groups_id")
     bridge_config = request.context['conf_obj'].bridge
     return bridge_config['groups']
 
@@ -30,7 +29,6 @@ def api_get_groups_id(uid, resource_id, request, response):
 @hug.get('/api/{uid}/groups/new', requires=authorized)
 def api_get_groups_new(uid, request, response):
     """return new lights and sensors only."""
-    print("api_groups_new")
     bridge_config = request.context['conf_obj'].bridge
     print(request.context['conf_obj'].get_new_lights())
     response = request.context['conf_obj'].get_new_lights()
@@ -40,13 +38,11 @@ def api_get_groups_new(uid, request, response):
 
 @hug.get('/api/{uid}/groups')
 def api_get_groups(uid, request, response):
-    print("api_groups")
     bridge_config = request.context['conf_obj'].bridge
     return bridge_config['groups']
 
 @hug.get('/api/{uid}/groups/0', requires=authorized)
 def api_get_groups_0(uid, request, response):
-    print("api_groups_0")
     bridge_config = request.context['conf_obj'].bridge
     any_on = False
     all_on = True
@@ -120,7 +116,7 @@ def api_put_groups_id_action(uid, resource_id, body, request, response):
         for light in bridge_config["scenes"][put_dictionary["scene"]]["lights"]:
             if light not in processedLights:
                 current_light = request.context['conf_obj'].get_resource("lights", light)
-                if current_light.manufacturername in ("yeelight", "hue"):
+                if current_light.address.protocol in ("yeelight", "hue"):
                     current_light.send_request(bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
                 else:
                     sendLightRequest(request.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
@@ -156,7 +152,7 @@ def api_put_groups_id_action(uid, resource_id, body, request, response):
             if "virtual_light" not in bridge_config["alarm_config"] or light != bridge_config["alarm_config"]["virtual_light"]:
                 bridge_config["lights"][light]["state"].update(put_dictionary)
                 current_light = request.context['conf_obj'].get_resource("lights", light)
-                if current_light.manufacturername in ("yeelight", "hue"):
+                if current_light.address.protocol in ("yeelight", "hue"):
                     current_light.send_request(put_dictionary)
                 else:
                     sendLightRequest(request.context['conf_obj'], light, put_dictionary)

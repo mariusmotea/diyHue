@@ -36,9 +36,10 @@ def api_get_lights_new(uid, resource_type, request, response):
     return response
 
 
-@hug.get('/api/{uid}/lights')
+@hug.get('/api/{uid}/lights', requires=authorized)
 def api_get_lights(uid, request, response):
-    return request.context['conf_obj'].get_json_lights()
+    return request.context['conf_obj'].bridge['lights']
+    return request.context['conf_obj'].get_lights()
 
 
 @hug.post('/api/{uid}/lights', requires=authorized)

@@ -95,4 +95,3 @@ def discoverYeelight(conf_obj, new_lights):
             print('Yeelight search end')
             sock.close()
             break
-

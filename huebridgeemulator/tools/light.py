@@ -156,7 +156,7 @@ def sendLightRequest(conf_obj, light, data):
                     url += "&x=" + str(value[0]) + "&y=" + str(value[1])
                 else:
                     url += "&" + key + "=" + str(value)
-        elif bridge_config["lights_address"][light]["protocol"] in ["hue","deconz"]: #Original Hue light or Deconz light
+        elif bridge_config["lights_address"][light]["protocol"] in ["deconz"]: #Original Hue light or Deconz light
             url = "http://" + bridge_config["lights_address"][light]["ip"] + "/api/" + bridge_config["lights_address"][light]["username"] + "/lights/" + bridge_config["lights_address"][light]["light_id"] + "/state"
             method = 'PUT'
             payload.update(data)
@@ -191,9 +191,8 @@ def sendLightRequest(conf_obj, light, data):
                     payload["color"] = {}
                     (payload["color"]["r"], payload["color"]["g"], payload["color"]["b"]) = convert_xy(value[0], value[1], bridge_config["lights"][light]["state"]["bri"])
             print(json.dumps(payload))
-        elif bridge_config["lights_address"][light]["protocol"] == "yeelight": #YeeLight bulb
+        elif bridge_config["lights_address"][light]["protocol"] in ["yeelight", "hue"]: # new format bulb
             raise Exception("Yeelight light are now a class")
-
         elif bridge_config["lights_address"][light]["protocol"] == "ikea_tradfri": #IKEA Tradfri bulb
             url = "coaps://" + bridge_config["lights_address"][light]["ip"] + ":5684/15001/" + str(bridge_config["lights_address"][light]["device_id"])
             for key, value in data.items():

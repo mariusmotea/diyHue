@@ -15,11 +15,8 @@ class HueLight(Light):
         self.address = HueLightAddress(address)
 
     def send_request(self, data):
-        payload = {}
         url = "http://" + self.address.ip + "/api/" + self.address.username + "/lights/" + self.address.light_id + "/state"
-#        method = 'PUT'
-        payload.update(data)
-        requests.put(url, data=payload)
+        requests.put(url, data=json.dumps(data))
 
     def read_config(self, raw):
         self._raw = raw
