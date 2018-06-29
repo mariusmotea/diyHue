@@ -10,4 +10,6 @@ http_logger = main_logger.getChild('http')
 light_logger = main_logger.getChild('light')
 sspd_search_logger = main_logger.getChild('sspdSearch')
 sspd_broadcast_logger = main_logger.getChild('sspdBroadcast')
+scheduler_logger = main_logger.getChild('scheduler')
+sync_with_lights_logger = main_logger.getChild('sync_with_lights')
 

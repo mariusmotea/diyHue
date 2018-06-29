@@ -14,77 +14,57 @@ from huebridgeemulator.device.yeelight import discoverYeelight
 from huebridgeemulator.tools.colors import convert_rgb_xy, convert_xy
 from huebridgeemulator.http.client import sendRequest
 
+LIGHT_TYPES = \
+{"LCT015": {"state": {"on": False,
+                      "bri": 200,
+                      "hue": 0,
+                      "sat": 0,
+                      "xy": [0.0, 0.0],
+                      "ct": 461,
+                      "alert": "none",
+                      "effect": "none",
+                      "colormode": "ct",
+                      "reachable": True},
+            "type": "Extended color light",
+            "swversion": "1.29.0_r21169"},
+"LST001": {"state": {"on": False,
+                     "bri": 200,
+                     "hue": 0,
+                     "sat": 0,
+                     "xy": [0.0, 0.0],
+                     "ct": 461,
+                     "alert": "none",
+                     "effect": "none",
+                     "colormode": "ct",
+                     "reachable": True},
+           "type": "Color light",
+           "swversion": "66010400"},
+"LWB010": {"state": {"on": False,
+                     "bri": 254,
+                     "alert": "none",
+                     "reachable": True},
+           "type": "Dimmable light",
+           "swversion": "1.15.0_r18729"},
+"LTW001": {"state": {"on": False,
+                     "colormode": "ct",
+                     "alert": "none",
+                     "reachable": True,
+                     "bri": 254,
+                     "ct": 230},
+           "type": "Color temperature light",
+           "swversion": "5.50.1.19085"},
+"Plug 01": {"state": {"on": False,
+                      "alert": "none",
+                      "reachable": True},
+            "type": "On/Off plug-in unit",
+            "swversion": "V1.04.12"}
+}
+
 
 def getIpAddress():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     return s.getsockname()[0]
-
-def syncWithLights(conf_obj): #update Hue Bridge lights states
-    bridge_config = conf_obj.bridge
-    while True:
-        print("sync with lights")
-        for light in bridge_config["lights_address"]:
-            try:
-                if bridge_config["lights_address"][light]["protocol"] == "native":
-                    light_data = json.loads(sendRequest("http://" + bridge_config["lights_address"][light]["ip"] + "/get?light=" + str(bridge_config["lights_address"][light]["light_nr"]), "GET", "{}"))
-                    bridge_config["lights"][light]["state"].update(light_data)
-                elif bridge_config["lights_address"][light]["protocol"] == "hue":
-                    light_data = json.loads(sendRequest("http://" + bridge_config["lights_address"][light]["ip"] + "/api/" + bridge_config["lights_address"][light]["username"] + "/lights/" + bridge_config["lights_address"][light]["light_id"], "GET", "{}"))
-                    bridge_config["lights"][light]["state"].update(light_data["state"])
-                elif bridge_config["lights_address"][light]["protocol"] == "ikea_tradfri":
-                    light_data = json.loads(check_output("./coap-client-linux -m get -u \"" + bridge_config["lights_address"][light]["identity"] + "\" -k \"" + bridge_config["lights_address"][light]["preshared_key"] + "\" \"coaps://" + bridge_config["lights_address"][light]["ip"] + ":5684/15001/" + str(bridge_config["lights_address"][light]["device_id"]) +"\"", shell=True).decode('utf-8').split("\n")[3])
-                    bridge_config["lights"][light]["state"]["on"] = bool(light_data["3311"][0]["5850"])
-                    bridge_config["lights"][light]["state"]["bri"] = light_data["3311"][0]["5851"]
-                    if "5706" in light_data["3311"][0]:
-                        if light_data["3311"][0]["5706"] == "f5faf6":
-                            bridge_config["lights"][light]["state"]["ct"] = 170
-                        elif light_data["3311"][0]["5706"] == "f1e0b5":
-                            bridge_config["lights"][light]["state"]["ct"] = 320
-                        elif light_data["3311"][0]["5706"] == "efd275":
-                            bridge_config["lights"][light]["state"]["ct"] = 470
-                    else:
-                        bridge_config["lights"][light]["state"]["ct"] = 470
-                elif bridge_config["lights_address"][light]["protocol"] == "milight":
-                    light_data = json.loads(sendRequest("http://" + bridge_config["lights_address"][light]["ip"] + "/gateways/" + bridge_config["lights_address"][light]["device_id"] + "/" + bridge_config["lights_address"][light]["mode"] + "/" + str(bridge_config["lights_address"][light]["group"]), "GET", "{}"))
-                    if light_data["state"] == "ON":
-                        bridge_config["lights"][light]["state"]["on"] = True
-                    else:
-                        bridge_config["lights"][light]["state"]["on"] = False
-                    if "brightness" in light_data:
-                        bridge_config["lights"][light]["state"]["bri"] = light_data["brightness"]
-                    if "color_temp" in light_data:
-                        bridge_config["lights"][light]["state"]["colormode"] = "ct"
-                        bridge_config["lights"][light]["state"]["ct"] = light_data["color_temp"] * 1.6
-                    elif "bulb_mode" in light_data and light_data["bulb_mode"] == "color":
-                        bridge_config["lights"][light]["state"]["colormode"] = "xy"
-                        bridge_config["lights"][light]["state"]["xy"] = convert_rgb_xy(light_data["color"]["r"], light_data["color"]["g"], light_data["color"]["b"])
-                elif bridge_config["lights_address"][light]["protocol"] == "yeelight": #getting states from the yeelight
-                    current_light = conf_obj.get_resource("lights", light)
-                    bridge_config["lights"][light] = current_light.status()
-                elif bridge_config["lights_address"][light]["protocol"] == "domoticz": #domoticz protocol
-                    light_data = json.loads(sendRequest("http://" + bridge_config["lights_address"][light]["ip"] + "/json.htm?type=devices&rid=" + bridge_config["lights_address"][light]["light_id"], "GET", "{}"))
-                    if light_data["result"][0]["Status"] == "Off":
-                         bridge_config["lights"][light]["state"]["on"] = False
-                    else:
-                         bridge_config["lights"][light]["state"]["on"] = True
-                    bridge_config["lights"][light]["state"]["bri"] = str(round(float(light_data["result"][0]["Level"])/100*255))
-
-                bridge_config["lights"][light]["state"]["reachable"] = True
-                updateGroupStats(conf_obj, light)
-            except Exception as exp:
-                bridge_config["lights"][light]["state"]["reachable"] = False
-                bridge_config["lights"][light]["state"]["on"] = False
-                print("light " + light + " is unreachable")
-                raise exp
-        sleep(10) #wait at last 10 seconds before next sync
-        i = 0
-        while i < 300: #sync with lights every 300 seconds or instant if one user is connected
-            for user in bridge_config["config"]["whitelist"].keys():
-                if bridge_config["config"]["whitelist"][user]["last use date"] == datetime.now().strftime("%Y-%m-%dT%H:%M:%S"):
-                    i = 300
-                    break
-            sleep(1)
 
 
 def scanForLights(conf_obj, new_lights): #scan for ESP8266 lights and strips
@@ -114,7 +94,7 @@ def scanForLights(conf_obj, new_lights): #scan for ESP8266 lights and strips
                             print("Add new light: " + light_name)
                             for x in range(1, int(device_data["lights"]) + 1):
                                 new_light_id = nextFreeId("lights")
-                                conf_obj.bridge["lights"][new_light_id] = {"state": light_types[device_data["modelid"]]["state"], "type": light_types[device_data["modelid"]]["type"], "name": light_name if x == 1 else light_name + " " + str(x), "uniqueid": device_data["mac"] + "-" + str(x), "modelid": device_data["modelid"], "manufacturername": "Philips", "swversion": light_types[device_data["modelid"]]["swversion"]}
+                                conf_obj.bridge["lights"][new_light_id] = {"state": LIGHT_TYPES[device_data["modelid"]]["state"], "type": LIGHT_TYPES[device_data["modelid"]]["type"], "name": light_name if x == 1 else light_name + " " + str(x), "uniqueid": device_data["mac"] + "-" + str(x), "modelid": device_data["modelid"], "manufacturername": "Philips", "swversion": LIGHT_TYPES[device_data["modelid"]]["swversion"]}
                                 new_lights.update({new_light_id: {"name": light_name if x == 1 else light_name + " " + str(x)}})
                                 conf_obj.bridge["lights_address"][new_light_id] = {"ip": ip, "light_nr": x, "protocol": "native"}
         except Exception as exp:

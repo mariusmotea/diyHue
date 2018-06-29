@@ -89,9 +89,16 @@ class Config(object):
             print(self.lights)
 
     def save(self):
-        """Write configuration from file"""
+        """Write configuration to file."""
         # TODO add yaml
         with open(self.filepath, 'w') as cfs:
+            json.dump(self.bridge, cfs, sort_keys=True, indent=4, separators=(',', ': '))
+
+    def backup(self):
+        """Backup configuration."""
+        filepath = "{}-backup-{}.json".format(self.filepath,
+                                              datetime.now().strftime("%Y-%m-%d"))
+        with open(filepath, 'w') as cfs:
             json.dump(self.bridge, cfs, sort_keys=True, indent=4, separators=(',', ': '))
 
     def nextFreeId(self, element):
@@ -119,12 +126,12 @@ class Config(object):
         return getattr(self, type)[index]
 
     def get_lights(self):
-        """Return all lights in JSON format"""
+        """Return all lights."""
         ret = {}
         for index, light in self.lights.items():
             ret[index] = light.serialize()
         return ret
 
     def get_json_lights(self):
-        """Return all lights in JSON format"""
+        """Return all lights in JSON format."""
         return json.dumps(self.get_lights())
