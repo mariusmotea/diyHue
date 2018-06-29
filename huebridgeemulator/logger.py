@@ -8,3 +8,6 @@ logging.basicConfig(format=FORMAT)
 main_logger = logging.getLogger('HueBridgeEmulator')
 http_logger = main_logger.getChild('http')
 light_logger = main_logger.getChild('light')
+sspd_search_logger = main_logger.getChild('sspdSearch')
+sspd_broadcast_logger = main_logger.getChild('sspdBroadcast')
+

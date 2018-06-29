@@ -46,8 +46,8 @@ def main():
         mac = '%012x' % get_mac()
         if update_lights_on_startup:
             updateAllLights()
-        Thread(target=ssdpSearch, args=[getIpAddress(), mac]).start()
-        Thread(target=ssdpBroadcast, args=[getIpAddress(), mac]).start()
+        Thread(target=ssdp_search).start()
+        Thread(target=ssdp_broadcast).start()
         Thread(target=schedulerProcessor, args=[bridge_config, run_service]).start()
         Thread(target=syncWithLights, args=[conf_obj]).start()
 #        Thread(target=run, args=[False, conf_obj, sensors_state]).start()
