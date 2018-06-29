@@ -85,8 +85,6 @@ class Config(object):
                     self.lights[index] = new_light
             for index, scene in self.bridge['scenes'].items():
                 self.scenes[index] = Scene(scene)
-            print("L"*455)
-            print(self.lights)
 
     def save(self):
         """Write configuration to file."""
