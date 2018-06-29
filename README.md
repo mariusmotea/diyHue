@@ -14,6 +14,12 @@ python setup.py develop
 sudo env/bin/huebridgeemulator -c config.json -l DEBUG
 ```
 
+Run tests
+```
+source env/bin/activate
+tox
+```
+
 
 ### Requirements:
  - python
