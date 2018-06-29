@@ -47,7 +47,7 @@ def main():
             updateAllLights()
         Thread(target=ssdp_search).start()
         Thread(target=ssdp_broadcast).start()
-        Thread(target=scheduler_processor, args=[conf_obj, run_service]).start()
+        Thread(target=scheduler_processor, args=[conf_obj, sensors_state, run_service]).start()
         Thread(target=sync_with_lights, args=[conf_obj]).start()
 #        Thread(target=run, args=[False, conf_obj, sensors_state]).start()
 #        Thread(target=run, args=[True, conf_obj, sensors_state]).start()

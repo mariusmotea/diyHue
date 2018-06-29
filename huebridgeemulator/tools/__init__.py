@@ -1,5 +1,6 @@
 import socket
 import smtplib
+from threading import Thread
 
 
 def getIpAddress():
@@ -35,3 +36,23 @@ def sendEmail(triggered_sensor):
     except:
         print("failed to send mail")
         return False
+
+
+def rulesProcessor(bridge_config, sensor, current_time=datetime.now().strftime("%Y-%m-%dT%H:%M:%S")):
+    bridge_config["config"]["localtime"] = current_time #required for operator dx to address /config/localtime
+    actionsToExecute = []
+    for rule in bridge_config["rules"].keys():
+        if bridge_config["rules"][rule]["status"] == "enabled":
+            rule_result = checkRuleConditions(rule, sensor, current_time)
+            if rule_result[0]:
+                if rule_result[1] == 0: #is not ddx rule
+                    print("rule " + rule + " is triggered")
+                    bridge_config["rules"][rule]["lasttriggered"] = current_time
+                    bridge_config["rules"][rule]["timestriggered"] += 1
+                    for action in bridge_config["rules"][rule]["actions"]:
+                        actionsToExecute.append(action)
+                else: #if ddx rule
+                    print("ddx rule " + rule + " will be re validated after " + str(rule_result[1]) + " seconds")
+                    Thread(target=ddxRecheck, args=[rule, sensor, current_time, rule_result[1], rule_result[2]]).start()
+    for action in actionsToExecute:
+        sendRequest("/api/" +    list(bridge_config["config"]["whitelist"])[0] + action["address"], action["method"], json.dumps(action["body"]))

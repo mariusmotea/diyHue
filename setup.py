@@ -20,6 +20,7 @@ setup(name='huebridgeemulator',
                         "PyYAML==3.12",
                         "hug==2.4.0",
                         "Jinja2==2.10",
+                        "astral==1.6.1",
                         ],
       classifiers=[
         'Programming Language :: Python :: 3.4',

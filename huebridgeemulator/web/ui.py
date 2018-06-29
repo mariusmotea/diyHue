@@ -12,6 +12,7 @@ from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.web.templates import get_template
 from huebridgeemulator.http.websocket import scanDeconz
 
+
 @hug.static('/')
 def root():
     return ("web-ui/", )
@@ -28,6 +29,16 @@ def configjs(request, response):
     response.set_header('Content-type', 'text/javascript')
     return 'window.config = { API_KEY: "' + list(bridge_config["config"]["whitelist"])[0] + '",};'
 
+
+
+@hug.get('/debug/clip.html', output=hug.output_format.html)
+def debug_clip(request, response):
+    """????
+
+    .. todo:: Missing template file content
+    """
+    template = get_template('clip.html.j2')
+    return template.render({})
 
 @hug.get('/save')
 def save(request, response):

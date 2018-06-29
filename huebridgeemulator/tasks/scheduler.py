@@ -3,15 +3,17 @@
 .. todo:: Add description and some comments
 """
 from datetime import datetime, timedelta
-import time
-import random
 import json
+import random
+from threading import Thread
+import time
 
 from huebridgeemulator.logger import scheduler_logger
 from huebridgeemulator.http.client import sendRequest
+from huebridgeemulator.tasks.daylight_sensor import daylight_sensor
 
 
-def scheduler_processor(conf_obj, run_service):
+def scheduler_processor(conf_obj, sensors_state, run_service):
     """???
 
     .. todo:: Add description and some comments
@@ -75,6 +77,7 @@ def scheduler_processor(conf_obj, run_service):
         if now.strftime("%M:%S") == "00:10":
             # auto save configuration every hour
             conf_obj.save()
+            Thread(target=daylight_sensor, args=[conf_obj, sensors_state]).start()
             if now.hour == "23" and now.weekday == 6:
                 # backup config every Sunday at 23:00:10
                 conf_obj.backup()
