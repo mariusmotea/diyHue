@@ -14,6 +14,7 @@ Subpackages
     huebridgeemulator.device
     huebridgeemulator.http
     huebridgeemulator.hue
+    huebridgeemulator.tasks
     huebridgeemulator.tools
 
 Submodules

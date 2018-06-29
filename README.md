@@ -22,6 +22,12 @@ pip install -r test_requirements.txt
 tox
 ```
 
+Generate documentation
+```
+source env/bin/activate
+make doc-gen
+```
+
 
 ### Requirements:
  - python

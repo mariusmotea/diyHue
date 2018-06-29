@@ -14,5 +14,4 @@ Submodules
    huebridgeemulator.tools.colors
    huebridgeemulator.tools.light
    huebridgeemulator.tools.scheduler
-   huebridgeemulator.tools.ssdp
 
