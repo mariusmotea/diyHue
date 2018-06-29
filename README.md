@@ -10,6 +10,7 @@ How to test it:
 ```
 virtualenv -p `which python3` env
 source env/bin/activate
+pip install -r requirements.txt
 python setup.py develop
 sudo env/bin/huebridgeemulator -c config.json -l DEBUG
 ```
@@ -17,6 +18,7 @@ sudo env/bin/huebridgeemulator -c config.json -l DEBUG
 Run tests
 ```
 source env/bin/activate
+pip install -r test_requirements.txt
 tox
 ```
 

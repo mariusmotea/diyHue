@@ -11,7 +11,7 @@ from jinja2 import FileSystemLoader, Environment
 from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.web.templates import get_template
 from huebridgeemulator.http.websocket import scanDeconz
-from huebridgeemulator.tools.light import scanForLights, updateGroupStats
+from huebridgeemulator.tools.light import scanForLights, updateGroupStats, sendLightRequest
 from threading import Thread
 import time
 
@@ -30,7 +30,6 @@ def api_get_groups_id(uid, resource_id, request, response):
 def api_get_groups_new(uid, request, response):
     """return new lights and sensors only."""
     bridge_config = request.context['conf_obj'].bridge
-    print(request.context['conf_obj'].get_new_lights())
     response = request.context['conf_obj'].get_new_lights()
     request.context['conf_obj'].clear_new_lights()
     return response
@@ -183,5 +182,9 @@ def api_put_groups_id_action(uid, resource_id, body, request, response):
         #now send the rest of the requests in non threaded mode
         for light in bridge_config["groups"][resource_id]["lights"]:
             if light not in processedLights:
-                sendLightRequest(request.context['conf_obj'], light, put_dictionary)
+                current_light = request.context['conf_obj'].get_resource("lights", light)
+                if current_light.address.protocol in ("yeelight", "hue"):
+                    current_light.send_request(put_dictionary)
+                else:
+                    sendLightRequest(request.context['conf_obj'], light, put_dictionary)
     request.context['conf_obj'].save()
