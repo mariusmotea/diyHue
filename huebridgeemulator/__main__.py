@@ -9,7 +9,7 @@ import argparse
 from huebridgeemulator.http.websocket import scanDeconz
 from huebridgeemulator.config import saveConfig, loadConfig, Config
 from huebridgeemulator.tools import getIpAddress, generateSensorsState
-from huebridgeemulator.tools.ssdp import ssdpSearch, ssdpBroadcast
+from huebridgeemulator.tasks.ssdp import ssdpSearch, ssdpBroadcast
 from huebridgeemulator.tools.scheduler import schedulerProcessor
 from huebridgeemulator.tools.light import syncWithLights
 from huebridgeemulator.http.web import run
