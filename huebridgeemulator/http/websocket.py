@@ -13,7 +13,7 @@ from threading import Thread
 from collections import defaultdict
 from uuid import getnode as get_mac
 from urllib.parse import urlparse, parse_qs
-from functions import *
+from huebridgeemulator.functions import *
 
 def websocketClient():
     from ws4py.client.threadedclient import WebSocketClient

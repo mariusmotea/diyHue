@@ -13,7 +13,6 @@ from threading import Thread
 from collections import defaultdict
 from uuid import getnode as get_mac
 from urllib.parse import urlparse, parse_qs
-from functions import *
 from uuid import getnode as get_mac
 
 
@@ -22,6 +21,7 @@ from huebridgeemulator.config import saveConfig
 from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.tools.light import scanForLights, updateGroupStats, sendLightRequest
 from huebridgeemulator.http.client import sendRequest
+from huebridgeemulator.functions import *
 
 
 class S(BaseHTTPRequestHandler):

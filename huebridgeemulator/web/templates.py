@@ -6,3 +6,8 @@ TEMPLATE_ENGINE = Environment(loader=FileSystemLoader(os.path.join(_DIR_PATH, "t
 
 def get_template(name):
     return TEMPLATE_ENGINE.get_template(name)
+
+def get_static(name):
+    filepath = os.path.join(_DIR_PATH, "web-ui", name.strip("/"))
+    with open(filepath) as sfh:
+        return sfh.read()

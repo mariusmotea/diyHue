@@ -28,6 +28,11 @@ source env/bin/activate
 make doc-gen
 ```
 
+Use Docker to run it
+```
+make docker_build
+make docker_run
+```
 
 ### Requirements:
  - python

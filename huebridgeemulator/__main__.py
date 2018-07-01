@@ -52,13 +52,15 @@ def main():
 #        Thread(target=run, args=[False, conf_obj, sensors_state]).start()
 #        Thread(target=run, args=[True, conf_obj, sensors_state]).start()
         Thread(target=start, args=[conf_obj, sensors_state]).start()
+        main_logger.info("Main loop starting")
         while True:
+            main_logger.debug("Main loop run")
             sleep(10)
     except Exception as e:
         print("server stopped " + str(e))
     finally:
         run_service = False
-        saveConfig('/home/tcohen/perso/gits/github.com/mariusmotea/diyHue/config.json', bridge_config)
+        conf_obj.save()
         print('config saved')
 
 

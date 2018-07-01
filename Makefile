@@ -1,3 +1,4 @@
+WD=$(shell pwd)
 
 env:
 	virtualenv -p `which python3` env
@@ -19,4 +20,12 @@ doc-update-refs:
 	rm -rf doc/source/refs/
 	sphinx-apidoc -M -f -e -o doc/source/refs/ huebridgeemulator/
 
+docker_build:
+	sudo rm -rf `find . -name  __pycache__`
+	docker build -t hue-bridge-emulator .
 
+docker_irun:
+	docker run -v $(WD)/config.json:/config.json --rm --name hbe --net=host -it --entrypoint=bash hue-bridge-emulator
+
+docker_run:
+	docker run -it -v $(WD)/config.json:/config.json --rm --name hbe --net=host hue-bridge-emulator

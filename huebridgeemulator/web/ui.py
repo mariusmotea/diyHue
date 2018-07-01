@@ -6,29 +6,37 @@ import json
 
 import requests
 import hug
+from falcon import HTTP_404
 from jinja2 import FileSystemLoader, Environment
 
 from huebridgeemulator.tools import generateSensorsState
-from huebridgeemulator.web.templates import get_template
+from huebridgeemulator.web.templates import get_template, get_static
 from huebridgeemulator.http.websocket import scanDeconz
 
 
-@hug.static('/')
-def root():
-    return ("web-ui/", )
+@hug.get('/', output=hug.output_format.html)
+@hug.get('/{filename}.{ext}', output=hug.output_format.html)
+@hug.get('/static/{filename}.{ext}', output=hug.output_format.html)
+@hug.get('/static/js/{filename}.{ext}', output=hug.output_format.html)
+@hug.get('/static/css/{filename}.{ext}', output=hug.output_format.html)
+def root(request, response, filename="index", ext="html"):
+    if request.path == "/":
+        return hug.redirect.to('index.html')
+    try:
+        return get_static(request.path)
+    except FileNotFoundError:
+        response.status = HTTP_404
+        return
 
 
 @hug.get('/config.js',  output=hug.output_format.html)
 def configjs(request, response):
-#    import ipdb;ipdb.set_trace()
     bridge_config = request.context['conf_obj'].bridge
-
     if len(bridge_config["config"]["whitelist"]) == 0:
         bridge_config["config"]["whitelist"]["web-ui-" + str(random.randrange(0, 99999))] = {"create date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),"last use date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),"name": "WegGui User"}
     print('window.config = { API_KEY: "' + list(bridge_config["config"]["whitelist"])[0] + '",};')
     response.set_header('Content-type', 'text/javascript')
     return 'window.config = { API_KEY: "' + list(bridge_config["config"]["whitelist"])[0] + '",};'
-
 
 
 @hug.get('/debug/clip.html', output=hug.output_format.html)
