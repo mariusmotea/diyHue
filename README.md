@@ -2,8 +2,37 @@
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=J5NHHR47MVTMW)  
 This project emulates a Philips Hue Bridge that is able to control ZigBee lights (using Raspbee module or original Hue Bridge or IKEA Tradfri Gateway), Mi-Light bulbs (using MiLight Hub), Neopixel strips (WS2812B and SK6812) and any cheep ESP8266 based bulb from market by replacing firmware with custom one. Is written in python and will run on all small boxes like RaspberryPi. There are provided sketches for Hue Dimmer Switch, Hue Tap Switch and Hue Motion Sensor. Lights are two-way synchronized so any change made from original Philips/Tradfri sensors and switches will be applied also to bridge emulator.
 
-![diyHue ecosystem](https://raw.githubusercontent.com/mariusmotea/diyHue/develop/Images/hue-map.png)
+![diyHue ecosystem](https://raw.githubusercontent.com/mariusmotea/diyHue/develop/Devices/Images/hue-map.png)
 
+### New folder structure
+
+How to test it:
+```
+virtualenv -p `which python3` env
+source env/bin/activate
+pip install -r requirements.txt
+python setup.py develop
+sudo env/bin/huebridgeemulator -c config.json -l DEBUG
+```
+
+Run tests
+```
+source env/bin/activate
+pip install -r test_requirements.txt
+tox
+```
+
+Generate documentation
+```
+source env/bin/activate
+make doc-gen
+```
+
+Use Docker to run it
+```
+make docker_build
+make docker_run
+```
 
 ### Requirements:
  - python

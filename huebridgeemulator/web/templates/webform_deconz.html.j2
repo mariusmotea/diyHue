@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deconz Setup</title>
+<link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css">
+</head>
+<body>
+<form class="pure-form pure-form-aligned" action="" method="get">
+  <fieldset>
+    <legend>Deconz Switches Setup</legend>
+    {% for deconzSensor in deconz["sensors"].keys() %}
+      {% if sensors[deconz["sensors"][deconzSensor]["bridgeid"]]["modelid"] in ["TRADFRI remote control", "TRADFRI wireless dimmer"] %}
+        <div class="pure-control-group">
+          <label for="{{ deconzSensor }}">{{ sensors[deconz["sensors"][deconzSensor]["bridgeid"]]["name"] }}</label>
+          <select id="{{ deconzSensor }}" name="{{ deconz["sensors"][deconzSensor]["bridgeid"] }}">
+          {% if sensors[deconz["sensors"][deconzSensor]["bridgeid"]]["modelid"] == "TRADFRI remote control" %}
+            <option value="ZGPSwitch">Hue Tap Switch</option>
+            <option value="ZLLSwitch">Hue Dimmer Switch</option>
+          {% endif %}
+          {% for group in groups %}
+            {% if "room" in deconz["sensors"][deconzSensor] and deconz["sensors"][deconzSensor]["room"] == group %}
+            <option value="{{ group }}" selected>{{ groups[group]["name"] }}</option>
+            {% else %}
+            <option value="{{ group }}">{{ groups[group]["name"] }}</option>
+            {% endif %}
+          {% endfor %}
+          </select>
+          {% if sensors[deconz["sensors"][deconzSensor]["bridgeid"]]["modelid"] == "TRADFRI remote control" %}
+            <select id="{{ deconzSensor }}" name="mode_{{ deconz["sensors"][deconzSensor]["bridgeid"] }}">
+              <option value="CT">CCT Switch</option>
+              {% if "opmode" in deconz["sensors"][deconzSensor] and deconz["sensors"][deconzSensor]["opmode"] == "SCENE" %}
+              <option value="SCENE" selected>Scene Switch</option>
+              {% else %}
+              <option value="SCENE">Scene Switch</option>
+              {% endif %}
+             </select>
+          {% endif %}
+        </div>
+        <div class="pure-controls">
+          <button type="submit" class="pure-button pure-button-primary">Save</button></div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </fieldset>
+</form>
+</body>
+</html>

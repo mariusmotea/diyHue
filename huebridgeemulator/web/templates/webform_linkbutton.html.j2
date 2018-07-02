@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hue LinkButton</title>
+<link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css">
+</head>
+<body>
+<form class="pure-form pure-form-aligned" action="" method="get">
+<fieldset>
+<legend>Hue LinkButton</legend>
+
+<div class="pure-control-group">
+<label for="username">Username</label><input id="username" name="username" type="text" placeholder="Hue" data-cip-id="username">
+</div>
+<div class="pure-control-group">
+<label for="password">Password</label><input id="password" name="password" type="password" placeholder="HuePassword" data-cip-id="password">
+</div>
+
+<div class="pure-controls">
+<label class="pure-checkbox">
+Click on Activate button to allow association for 30 sec.
+</label>
+<input class="pure-button pure-button-primary" type="submit" name="action" value="Activate">
+<input class="pure-button pure-button-primary" type="submit" name="action" value="ChangePassword">
+<input class="pure-button pure-button-primary" type="submit" name="action" value="Exit"></div>
+
+</fieldset>
+</form>
+<br/>
+{{ message }}
+</body>
+</html>

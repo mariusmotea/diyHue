@@ -1,0 +1,98 @@
+from datetime import datetime
+from uuid import getnode as get_mac
+import hashlib
+import random
+import json
+
+import requests
+import hug
+from jinja2 import FileSystemLoader, Environment
+
+from huebridgeemulator.tools import generateSensorsState
+from huebridgeemulator.web.templates import get_template
+from huebridgeemulator.http.websocket import scanDeconz
+from huebridgeemulator.tools.light import scanForLights
+from threading import Thread
+import time
+
+import huebridgeemulator.web.ui
+from huebridgeemulator.web.tools import authorized
+
+
+@hug.get('/api/{uid}/scenes/{resource_id}', requires=authorized)
+def api_get_scenes_id(uid, resource_id, request, response):
+    """print specified object config."""
+    bridge_config = request.context['conf_obj'].bridge
+    return bridge_config['scenes']
+
+
+@hug.get('/api/{uid}/scenes', requires=authorized)
+def api_get_scenes(uid, request, response):
+    bridge_config = request.context['conf_obj'].bridge
+    return bridge_config['scenes']
+
+
+@hug.post('/api/{uid}/scenes', requires=authorized)
+def api_post_scenes(uid, body, request, response):
+    bridge_config = request.context['conf_obj'].bridge
+    post_dictionary = body
+    # find the first unused id for new object
+    new_object_id = request.context['conf_obj'].nextFreeId('scenes')
+    post_dictionary.update({"lightstates": {}, "version": 2, "picture": "", "lastupdated": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"), "owner" :uid})
+    if "locked" not in post_dictionary:
+        post_dictionary["locked"] = False
+    generateSensorsState(bridge_config, request.context['sensors_state'])
+    bridge_config['scenes'][new_object_id] = post_dictionary
+    request.context['conf_obj'].save()
+    print(json.dumps([{"success": {"id": new_object_id}}], sort_keys=True, indent=4, separators=(',', ': ')))
+    return [{"success": {"id": new_object_id}}]
+
+
+@hug.delete('/api/{uid}/scenes/{resource_id}', requires=authorized)
+def api_delete_scenes_id(uid, resource_id, request, response):
+    bridge_config = request.context['conf_obj'].bridge
+    del bridge_config['scenes'][resource_id]
+    request.context['conf_obj'].save()
+    return [{"success": "/scenes/" + resource_id + " deleted."}]
+
+
+@hug.put('/api/{uid}/scenes/{resource_id}/lightstates/{light_id}', requires=authorized)
+def api_put_scenes_id_light_id(uid, resource_id, light_id, body, request, response):
+    bridge_config = request.context['conf_obj'].bridge
+    put_dictionary = body
+    # WHY ????
+    try:
+        bridge_config['scenes'][resource_id]['lightstates'][light_id].update(put_dictionary)
+    except KeyError:
+        bridge_config['scenes'][resource_id]['lightstates'][light_id] = put_dictionary
+    # Those lines are useless because of the next one ...
+    bridge_config['scenes'][resource_id]['lightstates'][light_id] = put_dictionary
+    response_location = "/scenes/" + resource_id + "/lightstates/" + light_id + "/"
+    response_dictionary = []
+    for key, value in put_dictionary.items():
+        response_dictionary.append({"success":{response_location + key: value}})
+    print(json.dumps(response_dictionary, sort_keys=True, indent=4, separators=(',', ': ')))
+    request.context['conf_obj'].save()
+    return response_dictionary
+
+@hug.put('/api/{uid}/scenes/{resource_id}', requires=authorized)
+def api_put_scenes_id_light_id(uid, resource_id, body, request, response):
+    bridge_config = request.context['conf_obj'].bridge
+    put_dictionary = body
+    if "storelightstate" in put_dictionary:
+        for light in bridge_config["scenes"][resource_id]["lightstates"]:
+            bridge_config["scenes"][resource_id]["lightstates"][light] = {}
+            bridge_config["scenes"][resource_id]["lightstates"][light]["on"] = bridge_config["lights"][light]["state"]["on"]
+            bridge_config["scenes"][resource_id]["lightstates"][light]["bri"] = bridge_config["lights"][light]["state"]["bri"]
+            if bridge_config["lights"][light]["state"]["colormode"] in ["ct", "xy"]:
+                bridge_config["scenes"][resource_id]["lightstates"][light][bridge_config["lights"][light]["state"]["colormode"]] = bridge_config["lights"][light]["state"][bridge_config["lights"][light]["state"]["colormode"]]
+            elif bridge_config["lights"][light]["state"]["colormode"] == "hs" and "hue" in bridge_config["scenes"][resource_id]["lightstates"][light]:
+                bridge_config["scenes"][resource_id]["lightstates"][light]["hue"] = bridge_config["lights"][light]["state"]["hue"]
+                bridge_config["scenes"][resource_id]["lightstates"][light]["sat"] = bridge_config["lights"][light]["state"]["sat"]
+        bridge_config["scenes"][resource_id].update(put_dictionary)
+
+    response_dictionary = []
+    for key, value in put_dictionary.items():
+        response_dictionary.append({"success":{response_location + key: value}})
+    return response_dictionary
+

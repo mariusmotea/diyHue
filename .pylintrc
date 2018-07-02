@@ -1,0 +1,322 @@
+[MASTER]
+
+# Specify a configuration file.
+#rcfile=
+
+# Python code to execute, usually for sys.path manipulation such as
+# pygtk.require().
+#init-hook=
+
+# Add files or directories to the blacklist. They should be base names, not
+# paths.
+#ignore=
+
+# Pickle collected data for later comparisons.
+persistent=yes
+
+# List of plugins (as comma separated values of python modules names) to load,
+# usually to register additional checkers.
+load-plugins=
+
+[MESSAGES CONTROL]
+
+# Enable the message, report, category or checker with the given id(s). You can
+# either give multiple identifier separated by comma (,) or put this option
+# multiple time. See also the "--disable" option for examples.
+#enable=
+
+# Disable the message, report, category or checker with the given id(s). You
+# can either give multiple identifiers separated by comma (,) or put this
+# option multiple times (only on the command line, not in the configuration
+# file where it should appear only once).You can also use "--disable=all" to
+# disable everything first and then reenable specific checks. For example, if
+# you want to run only the similarities checker, you can use "--disable=all
+# --enable=similarities". If you want to run only the classes checker, but have
+# no Warning level messages displayed, use"--disable=all --enable=classes
+# --disable=W"
+
+# C1001 : *Old-style class defined.*. Reenable when cPickle is dropped
+# I0011 : *Locally disabling %s (%s)* Try to reduce that.
+# W0511 : *FIXME or XXX is detected.* Reenable when done. To link with roadmap
+# W0212 : *Access to a protected member %s of a client class*. Reenable when _id replace by uuid
+# W0201 : *Attribute %r defined outside __init__*. Because we instanciate object with properties dict
+# C0330 : *Wrong %s indentation%s%s.* Conflict with pep8
+# E0203 : *Access to member %r before its definition line %s*. Because we instanciate object with properties dict
+disable=C1001,W0201,W0212,I0011,W0511,C0330,E0203
+
+
+[REPORTS]
+
+# Set the output format. Available formats are text, parseable, colorized, msvs
+# (visual studio) and html. You can also give a reporter class, eg
+# mypackage.mymodule.MyReporterClass.
+output-format=text
+
+# Put messages in a separate file for each module / package specified on the
+# command line instead of printing them on stdout. Reports (if any) will be
+# written in a file name "pylint_global.[txt|html]".
+files-output=no
+
+# Tells whether to display a full report or only the messages
+reports=no
+
+# Python expression which should return a note less than 10 (10 is the highest
+# note). You have access to the variables errors warning, statement which
+# respectively contain the number of errors / warnings messages and the total
+# number of statements analyzed. This is used by the global evaluation report
+# (RP0004).
+evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)
+
+# Template used to display messages. This is a python new-style format string
+# used to format the message information. See doc for all details
+#msg-template=
+# parsable
+msg-template={path}:{line}: [{msg_id}({symbol}), {obj}] {msg}
+
+
+
+[BASIC]
+
+# List of builtins function names that should not be used, separated by a comma
+bad-functions=map,filter,apply,input,file
+
+# Good variable names which should always be accepted, separated by a comma
+good-names=i,j,k,ex,Run,_
+
+# Bad variable names which should always be refused, separated by a comma
+bad-names=foo,bar,baz,toto,tutu,tata
+
+# Colon-delimited sets of names that determine each other's naming style when
+# the name regexes allow several styles.
+name-group=
+
+# Include a hint for the correct naming format with invalid-name
+include-naming-hint=no
+
+# Regular expression matching correct function names
+function-rgx=[a-z_][a-z0-9_]{2,40}$
+
+# Naming hint for function names
+function-name-hint=[a-z_][a-z0-9_]{2,40}$
+
+# Regular expression matching correct variable names
+variable-rgx=[a-z_][a-z0-9_]{2,30}$
+
+# Naming hint for variable names
+variable-name-hint=[a-z_][a-z0-9_]{2,30}$
+
+# Regular expression matching correct constant names
+const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+
+# Naming hint for constant names
+const-name-hint=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+
+# Regular expression matching correct attribute names
+attr-rgx=[a-z_][a-z0-9_]{2,40}$
+
+# Naming hint for attribute names
+attr-name-hint=[a-z_][a-z0-9_]{2,40}$
+
+# Regular expression matching correct argument names
+argument-rgx=[a-z_][a-z0-9_]{2,30}$
+
+# Naming hint for argument names
+argument-name-hint=[a-z_][a-z0-9_]{2,30}$
+
+# Regular expression matching correct class attribute names
+class-attribute-rgx=([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$
+
+# Naming hint for class attribute names
+class-attribute-name-hint=([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$
+
+# Regular expression matching correct inline iteration names
+inlinevar-rgx=[A-Za-z_][A-Za-z0-9_]*$
+
+# Naming hint for inline iteration names
+inlinevar-name-hint=[A-Za-z_][A-Za-z0-9_]*$
+
+# Regular expression matching correct class names
+class-rgx=[A-Z_][a-zA-Z0-9]+$
+
+# Naming hint for class names
+class-name-hint=[A-Z_][a-zA-Z0-9]+$
+
+# Regular expression matching correct module names
+module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
+
+# Naming hint for module names
+module-name-hint=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
+
+# Regular expression matching correct method names
+method-rgx=[a-z_][a-z0-9_]{2,45}$
+
+# Naming hint for method names
+method-name-hint=[a-z_][a-z0-9_]{2,45}$
+
+# Regular expression which should only match function or class names that do
+# not require a docstring.
+no-docstring-rgx=__.*__
+
+# Minimum line length for functions/classes that require docstrings, shorter
+# ones are exempt.
+docstring-min-length=-1
+
+
+[VARIABLES]
+
+# Tells whether we should check for unused import in __init__ files.
+init-import=no
+
+# A regular expression matching the name of dummy variables (i.e. expectedly
+# not used).
+dummy-variables-rgx=_$|dummy
+
+# List of additional names supposed to be defined in builtins. Remember that
+# you should avoid to define new builtins when possible.
+additional-builtins=
+
+
+[LOGGING]
+
+# Logging modules to check that the string format arguments are in logging
+# function parameter format
+logging-modules=logging
+
+
+[MISCELLANEOUS]
+
+# List of note tags to take in consideration, separated by a comma.
+notes=FIXME,XXX,TODO
+
+
+[TYPECHECK]
+
+# Tells whether missing members accessed in mixin class should be ignored. A
+# mixin class is detected if its name ends with "mixin" (case insensitive).
+ignore-mixin-members=yes
+
+# List of module names for which member attributes should not be checked
+# (useful for modules/projects where namespaces are manipulated during runtime
+# and thus extisting member attributes cannot be deduced by static analysis
+#ignored-modules=
+
+# List of classes names for which member attributes should not be checked
+# (useful for classes with attributes dynamically set).
+ignored-classes=SQLObject
+
+# List of members which are set dynamically and missed by pylint inference
+# system, and so shouldn't trigger E0201 when accessed. Python regular
+# expressions are accepted.
+generated-members=status_update_interval,enable_predictive_service_dependency_checks,last_time_unreachable,childs,first_notification,statsd_prefix,retained_contact_service_attribute_mask,prefix,local_log,retain_status_information,last_hard_state_change,checkmodulation_name,skip_initial_broks,$USER221$,retry_interval,snapshot_enabled,event_handler_enabled,imported_from,daemon_enabled,use_retained_program_state,api_key,lock_file,command_check_interval,last_time_unknown,$USER252$,$USER215$,last_snapshot,is_active,retained_process_service_attribute_mask,$USER56$,notified_contacts,flapping_comment_id,early_timeout,$USER51$,log_archive_path,notes,is_a,$USER28$,ocsp_timeout,host_name,$USER16$,perfdata_file_mode,host_notification_options,contactgroup_name,$USER158$,active_checks_enabled,$USER194$,process_perf_data,$USER30$,reactionner_tag,is_volatile,$USER142$,$USER135$,use_ssl,$USER105$,port,$USER26$,$USER145$,schedulers,$USER76$,last_time_up,$USER151$,$USER60$,enable_notifications,code_src,$USER212$,enable_event_handlers,$USER246$,$USER173$,$USER122$,$USER2$,$USER86$,tags,$USER230$,$USER78$,host_perfdata_file_processing_command,address,$USER163$,_in_timeout,vrml_image,$USER41$,$USER94$,low_host_flap_threshold,obsess_over_services,$USER46$,acknowledgement_type,resource_file,$USER226$,was_in_hard_unknown_reach_phase,max_check_attempts,check_freshness,sleep_time,service_freshness_check_interval,members,$USER164$,runners_timeout,aq_parent,checks_in_progress,$USER239$,servicedependencies,$USER184$,percent_state_change,$USER9$,host_dependency_enabled,resource_macros_names,$USER241$,initial_state,type,broks,pending_flex_downtime,check_service_freshness,check_result_path,state_type,$USER251$,configuration_warnings,service_check_timeout,in_hard_unknown_reach_phase,$USER219$,free_child_process_memory,max_host_check_spread,server_key,in_checking,$USER248$,duration_sec,$USER45$,high_flap_threshold,check_interval,execution_failure_criteria,should_be_scheduled,log_service_retries,retention_update_interval,impacts,state_changed_since_impact,$USER161$,check_for_updates,realm_name,$USER101$,$USER22$,$USER63$,$USER154$,service_notifications_enabled,exclude,$USER18$,global_host_event_handler,manage_arbiters,flap_history,$USER64$,external_commands,log_level,$USER13$,$USER52$,trending_policies,max_concurrent_checks,command_line,enable_problem_impacts_states_change,use_syslog,env,$USER204$,notifications_enabled,use_large_installation_tweaks,maintenance_period,admin_pager,reactionners,service_perfdata_file_template,retained_contact_host_attribute_mask,customs,enable_flap_detection,$USER98$,in_maintenance,got_default_realm,$USER126$,$USER82$,trigger_name,$USER130$,$USER35$,$USER178$,time_based,attempt,service_perfdata_file,$USER146$,register,$USER73$,modified_attributes,alias,$USER193$,event_broker_options,service_perfdata_file_processing_command,$USER160$,$USER91$,$USER245$,$USER112$,$USER85$,$USER176$,statsd_host,$USER116$,chk_depend_of,group,$USER216$,last_notification_time,resultmodulation_name,notifications_in_progress,use_true_regexp_matching,global_low_flap_threshold,$USER235$,cached_check_horizon,$USER5$,$USER229$,arbiters,webui_lock_file,modulation_period,execution_time,host_perfdata_file_mode,$USER3$,$USER111$,perfdata_file_processing_command,business_impact_modulation_name,business_rule_output_template,$USER209$,idontcareaboutsecurity,object_cache_file,$USER139$,name,statsd_enabled,timeout,child_processes_fork_twice,$USER128$,macromodulation_name,$USER40$,check_type,in_scheduled_downtime_during_last_check,service_includes,hostgroups,notes_url,managed_confs,$USER57$,max_plugins_output_length,$USER106$,check_timeout,perfdata_command,notificationway_name,log_event_handlers,$USER200$,$USER17$,$USER222$,business_rule_host_notification_options,definition_order,$USER197$,snapshot_criteria,contact_groups,business_rule_smart_notifications,$USER134$,$USER228$,$USER31$,$USER70$,$USER143$,$USER102$,$USER25$,$USER77$,$USER67$,$USER150$,$USER38$,$USER213$,$USER81$,$USER172$,last_problem_id,$USER133$,last_perf_data,explode_hostgroup,$USER1$,$USER231$,$USER148$,$USER79$,escalations,$USER95$,$USER123$,command_name,$USER49$,log_retries,manage_sub_realms,$USER225$,max_queue_size,trigger_broker_raise_enabled,first_notification_delay,host_inter_check_delay_method,has_been_checked,$USER115$,escalation_name,serialized_confs,$USER92$,$USER165$,processed_business_rule,host_notification_period,service_excludes,date_format,timeout_exit_status,$USER185$,state_type_id,statsd_port,translate_passive_host_checks,check_command,service_notification_period,$USER199$,is_problem,acl_users,hostdependencies,$USER8$,daemon_thread_pool_size,is_impact,icon_image_alt,checkmodulations,auto_reschedule_checks,interval_length,host_check_timeout,latency,$USER253$,perfdata_file,realm,hostsextinfo,next_chk,external_command_buffer_slots,event_handler_timeout,current_notification_id,polling_interval,perfdata_file_template,global_service_event_handler,max_debug_file_size,ca_cert,precached_object_file,servicegroup_members,return_code,pack_distribution_file,contactgroups,$USER157$,module_type,$USER19$,$USER62$,services,pager,$USER58$,display_name,act_depend_of_me,$USER10$,expert,snapshot_command,$USER53$,last_time_down,poller_tag,$USER217$,is_flapping,_id,last_hard_state_id,inherits_parent,$USER107$,$USER188$,business_impact_modulations,$USER69$,labels,$USER192$,resultmodulations,$USER127$,obsess_over_service,action_url,$USER44$,s_time,$USER137$,$USER36$,chk_depend_of_me,host_perfdata_file_processing_interval,alignak_user,last_state,topology_change,log_initial_states,log_host_retries,notification_interval,$USER74$,$USER147$,$USER21$,3d_coords,notification_timeout,execute_service_checks,disable_old_nagios_parameters_whining,$USER96$,$USER4$,$USER120$,$USER244$,$USER175$,$USER84$,log_external_commands,global_high_flap_threshold,$USER119$,debug_verbosity,in_scheduled_downtime,python_name,address4,host_perfdata_file_template,time_to_orphanage,servicegroup_name,host_notifications_enabled,$USER168$,check_for_orphaned_hosts,$USER99$,exit_code_modulation,$USER236$,end_time,$USER181$,arbiter_name,execute_checks,higher_realms,last_event_id,$USER110$,problem_has_been_acknowledged,can_submit_commands,$USER208$,max_check_result_file_age,passive_checks_enabled,$USER201$,last_hard_state,receivers,$USER186$,business_rule_downtime_as_ack,stalking_options,last_check_command,state,pollers,email,$USER129$,broker_module,obsess_over,alignak_group,$USER240$,log_rotation_method,max_check_spread,use_multiprocesses_serializer,macromodulations,perfdata_timeout,$USER203$,$USER54$,spare,use_local_log,commands,data_timeout,human_timestamp_log,triggers,config_base_dir,2d_coords,cached_service_check_horizon,host_freshness_check_interval,min_business_impact,perf_data,$USER14$,check_for_orphaned,dependent_service_description,business_rule_service_notification_options,con,$USER196$,flapping_changes,last_time_critical,high_service_flap_threshold,current_notification_number,$USER140$,use_embedded_perl_implicitly,$USER71$,bare_update_checks,last_notification,service_inter_check_delay_method,check_period,module_alias,state_before_hard_unknown_reach_phase,exit_codes_match,check_time,$USER153$,check_external_commands,$USER66$,secret,trigger,broker_complete_links,global_check_freshness,last_state_id,parents,$USER39$,server_cert,$USER80$,$USER149$,enable_embedded_perl,log_passive_checks,$USER232$,$USER224$,$USER108$,brokers,realms,parallelize_check,$USER124$,$USER43$,$USER171$,high_host_flap_threshold,$USER48$,$USER89$,businessimpactmodulations,$USER32$,accept_passive_host_checks,servicegroups,$USER191$,$USER180$,no_event_handlers_during_downtimes,illegal_object_name_chars,$USER189$,$USER114$,$USER254$,snapshot_interval,cached_host_check_horizon,$USER166$,$USER93$,contact_name,use_timezone,host_perfdata_file,conf,scheduler_name,comments,$USER182$,snapshot_period,$USER198$,realm_members,ochp_timeout,$USER243$,reachable,service_overrides,address1,$USER7$,start_time,obsess_over_hosts,status,workdir,hard_ssl_name_check,pack_id,last_check,user,max_check_result_reaper_time,service_description,service_notification_commands,configuration_errors,retain_state_information,acknowledgement,dependency_period,escalation_options,command_file,current_problem_id,use_regexp_matching,service_perfdata_file_mode,got_business_rule,ocsp_command,state_id_before_impact,servicesextinfo,business_rule,parent_dependencies,log_notifications,http_proxy,global_event_handler,actions,$USER214$,webui_port,debug_level,$USER61$,low_flap_threshold,state_retention_file,$USER59$,check_flapping_recovery_notification,statusmap_image,check_for_orphaned_services,my_own_business_impact,$USER50$,push_flavor,failure_prediction_enabled,passive,$USER206$,$USER29$,$USER11$,$USER220$,$USER159$,$USER104$,$USER68$,$USER195$,address2,address3,REQUEST,address5,address6,freshness_threshold,host_perfdata_command,$USER37$,$USER136$,password,$USER27$,merge_host_contacts,$USER144$,$USER20$,custom_views,$USER75$,$USER156$,retained_service_attribute_mask,long_output,hosts,output,log_file,$USER24$,use_retained_scheduling_info,$USER97$,$USER174$,$USER121$,process_performance_data,source_problems,$USER87$,$USER237$,alive,$USER118$,event_handler,duplicate_foreach,$USER103$,$USER162$,default_value,last_state_type,contacts,notification_period,$USER169$,$USER47$,icon_image,service_notification_options,aggregation,$USER227$,enable_predictive_host_dependency_checks,ochp_command,service_perfdata_file_processing_interval,notification_failure_criteria,escalation_period,retain_nonstatus_information,$USER113$,use,t_to_go,check_host_freshness,host,timeperiod_name,passive_host_checks_are_soft,$USER250$,$USER238$,max_service_check_spread,timeperiods,execute_host_checks,$USER187$,debug_file,code_bin,icon_set,first_notification_time,business_impact,check_result_reaper_frequency,temp_file,child_dependencies,$USER218$,$USER202$,cleaning_queues_interval,status_file,last_time_warning,last_state_update,dependent_hostgroup_name,$USER255$,weight,$USER247$,flap_detection_options,$USER249$,dateranges,$USER15$,low_service_flap_threshold,enable_predictive_dependency_checks,service_dependencies,notification_options,u_time,retained_process_host_attribute_mask,current_event_id,service_perfdata_command,$USER23$,$USER72$,is_admin,$USER155$,$USER100$,accept_passive_service_checks,additional_freshness_latency,illegal_macro_output_chars,$USER152$,service_interleave_factor,$USER210$,$USER12$,$USER65$,webui_host,default,scheduled_downtime_depth,state_before_impact,last_state_change,$USER55$,$USER211$,auto_rescheduling_interval,state_id,admin_email,$USER205$,accept_passive_unknown_check_results,$USER233$,$USER131$,soft_state_dependencies,exit_status,$USER109$,$USER223$,command,$USER42$,$USER170$,$USER125$,$USER34$,$USER83$,hostescalations,$USER132$,$USER179$,auto_rescheduling_window,$USER33$,$USER88$,$USER141$,host_notification_commands,satellitemap,$USER190$,last_time_ok,enable_environment_macros,flap_detection_enabled,$USER167$,worker,$USER90$,$USER242$,$USER177$,unknown_members,need_conf,dependent_host_name,obsess_over_host,$USER117$,$USER183$,$USER207$,notificationways,act_depend_of,serviceescalations,use_aggressive_host_checking,last_chk,downtimes,modules,hostgroup_name,$USER138$,$USER234$,$USER6$,retained_host_attribute_mask,is_snapshot,ref,dependency_check,comment,instance_id,packs,sticky,author,notify,persistent
+
+
+[SIMILARITIES]
+
+# Minimum lines number of a similarity.
+min-similarity-lines=10
+
+# Ignore comments when computing similarities.
+ignore-comments=yes
+
+# Ignore docstrings when computing similarities.
+ignore-docstrings=yes
+
+# Ignore imports when computing similarities.
+ignore-imports=yes
+
+
+[FORMAT]
+
+# Maximum number of characters on a single line.
+max-line-length=100
+
+# Regexp for a line that is allowed to be longer than the limit.
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+
+# Allow the body of an if to be on the same line as the test if there is no
+# else.
+single-line-if-stmt=no
+
+# List of optional constructs for which whitespace checking is disabled
+no-space-check=trailing-comma,dict-separator
+
+# Maximum number of lines in a module
+max-module-lines=1500
+
+# String used as indentation unit. This is usually " " (4 spaces) or "\t" (1
+# tab).
+indent-string='    '
+
+
+[CLASSES]
+
+# List of method names used to declare (i.e. assign) instance attributes.
+defining-attr-methods=__init__,__new__,setUp
+
+# List of valid names for the first argument in a class method.
+valid-classmethod-first-arg=cls
+
+# List of valid names for the first argument in a metaclass class method.
+valid-metaclass-classmethod-first-arg=mcs
+
+
+[DESIGN]
+
+# Maximum number of arguments for function / method
+max-args=10
+
+# Argument names that match this expression will be ignored. Default to name
+# with leading underscore
+ignored-argument-names=_.*
+
+# Maximum number of locals for function / method body
+max-locals=25
+
+# Maximum number of return / yield for function / method body
+max-returns=10
+
+# Maximum number of branch for function / method body
+max-branches=20
+
+# Maximum number of statements in function / method body
+max-statements=80
+
+# Maximum number of parents for a class (see R0901).
+max-parents=7
+
+# Maximum number of attributes for a class (see R0902).
+max-attributes=25
+
+# Minimum number of public methods for a class (see R0903).
+min-public-methods=1
+
+# Maximum number of public methods for a class (see R0904).
+max-public-methods=30
+
+
+[IMPORTS]
+
+# Deprecated modules which should not be used, separated by a comma
+deprecated-modules=regsub,TERMIOS,Bastion,rexec
+
+# Create a graph of every (i.e. internal and external) dependencies in the
+# given file (report RP0402 must not be disabled)
+import-graph=
+
+# Create a graph of external dependencies in the given file (report RP0402 must
+# not be disabled)
+ext-import-graph=
+
+# Create a graph of internal dependencies in the given file (report RP0402 must
+# not be disabled)
+int-import-graph=
+
+
+[EXCEPTIONS]
+
+# Exceptions that will emit a warning when being caught. Defaults to
+# "Exception"
+overgeneral-exceptions=Exception
+
+max-nested-blocks=6
+max-bool-expr=10
