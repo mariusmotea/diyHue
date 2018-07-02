@@ -28,13 +28,11 @@ def root(request, response, filename="index", ext="html"):
         response.status = HTTP_404
         return
 
-
 @hug.get('/config.js',  output=hug.output_format.html)
 def configjs(request, response):
     bridge_config = request.context['conf_obj'].bridge
     if len(bridge_config["config"]["whitelist"]) == 0:
         bridge_config["config"]["whitelist"]["web-ui-" + str(random.randrange(0, 99999))] = {"create date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),"last use date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),"name": "WegGui User"}
-    print('window.config = { API_KEY: "' + list(bridge_config["config"]["whitelist"])[0] + '",};')
     response.set_header('Content-type', 'text/javascript')
     return 'window.config = { API_KEY: "' + list(bridge_config["config"]["whitelist"])[0] + '",};'
 

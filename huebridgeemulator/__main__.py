@@ -7,7 +7,7 @@ import argparse
 
 
 from huebridgeemulator.http.websocket import scanDeconz
-from huebridgeemulator.config import saveConfig, loadConfig, Config
+from huebridgeemulator.config import saveConfig, loadConfig, registry
 from huebridgeemulator.tools import getIpAddress, generateSensorsState
 from huebridgeemulator.tasks.ssdp import ssdp_search, ssdp_broadcast
 from huebridgeemulator.tasks.scheduler import scheduler_processor
@@ -33,7 +33,8 @@ def main():
     update_lights_on_startup = False # if set to true all lights will be updated with last know state on startup.
 
     # Load config
-    conf_obj = Config(args.config_file)
+    conf_obj = registry
+    conf_obj.set_filepath(args.config_file)
     bridge_config = conf_obj.bridge
 
     bridge_config, sensors_state = generateSensorsState(bridge_config, sensors_state)

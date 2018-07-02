@@ -3,7 +3,8 @@ import random
 import json
 
 from huebridgeemulator.const import LIGHT_TYPES
-from huebridgeemulator.device.yeelight.light import YeelightLight
+from huebridgeemulator.device.yeelight.light import YeelightLight, YeelightLightAddress
+from huebridgeemulator.device.light import LightState
 
 
 
@@ -79,17 +80,14 @@ def discoverYeelight(conf_obj, new_lights):
                              "uniqueid": "4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1",
                              "modelid": modelid,
                              "manufacturername": "yeelight",
-                             "state": LIGHT_TYPES[modelid]["state"],
+                             "state": LightState(LIGHT_TYPES[modelid]["state"]),
+                             "address": YeelightLightAddress(address),
                              "swversion": LIGHT_TYPES[modelid]["swversion"]}
-                new_light = YeelightLight(index=new_light_id,
-                                          address=address,
-                                          raw=raw_light,
-                                          )
-                conf_obj.add_new_light(new_light)
+                new_light = YeelightLight(raw_light)
+#                conf_obj.add_new_light(new_light)
                 bridge_config["lights"][new_light_id] = {"state": LIGHT_TYPES[modelid]["state"], "type": LIGHT_TYPES[modelid]["type"], "name": light_name, "uniqueid": "4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1", "modelid": modelid, "manufacturername": "Philips", "swversion": LIGHT_TYPES[modelid]["swversion"]}
 #                new_lights.update({new_light_id: {"name": light_name}})
                 bridge_config["lights_address"][new_light_id] = {"ip": properties["ip"], "id": properties["id"], "protocol": "yeelight"}
-
 
         except socket.timeout as exp:
             print('Yeelight search end')
