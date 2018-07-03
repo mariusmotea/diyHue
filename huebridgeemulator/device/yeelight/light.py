@@ -12,7 +12,7 @@ class YeelightLight(Light):
                         'modelid', 'manufacturername', 'swversion')
     _OPTIONAL_ATTRS = ()
 
-    def status(self):
+    def update_status(self):
         self.logger.debug(self.serialize())
         tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tcp_socket.settimeout(5)
@@ -72,7 +72,7 @@ class YeelightLight(Light):
             self.state.colormode = "hs"
         tcp_socket.close()
         self.logger.debug(self.serialize())
-        return self.serialize()
+        return
 
     def send_request(self, data):
         payload = {}

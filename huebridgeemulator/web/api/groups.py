@@ -17,6 +17,7 @@ import time
 
 import huebridgeemulator.web.ui
 from huebridgeemulator.web.tools import authorized
+from huebridgeemulator.group import Group
 
 
 @hug.get('/api/{uid}/groups/{resource_id}', requires=authorized)
@@ -75,9 +76,10 @@ def api_post_groups(uid, body, request, response):
     print("create objectcreate objectcreate objectcreate objectcreate object")
     print(request.path)
     # find the first unused id for new object
-    new_object_id = request.context['conf_obj'].nextFreeId('groups')
+    new_object_id = request.context['registry'].nextFreeId('groups')
     post_dictionary.update({"action": {"on": False}, "state": {"any_on": False, "all_on": False}})
     generateSensorsState(bridge_config, request.context['sensors_state'])
+#    Group(post_dictionary) 
     bridge_config['groups'][new_object_id] = post_dictionary
     request.context['conf_obj'].save()
     print(json.dumps([{"success": {"id": new_object_id}}], sort_keys=True, indent=4, separators=(',', ': ')))

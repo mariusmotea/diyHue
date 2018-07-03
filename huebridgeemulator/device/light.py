@@ -14,6 +14,14 @@ class Light(BaseResource):
     def send_request(self, data):
         raise NotImplementedError
 
+    def update_status(self):
+        raise NotImplementedError
+
+    def serialize(self):
+        # FIXME should be not difderent
+        ret = BaseResource.serialize(self)
+        del(ret['address'])
+        return ret
 
 class LightState(BaseObject):
 

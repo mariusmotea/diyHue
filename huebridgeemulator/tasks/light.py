@@ -89,7 +89,8 @@ def sync_with_lights(conf_obj):
                 elif bridge_config["lights_address"][light]["protocol"] == "yeelight":
                     # getting states from the yeelight
                     current_light = conf_obj.get_resource("lights", light)
-                    bridge_config["lights"][light] = current_light.status()
+                    current_light.update_status()
+                    bridge_config["lights"][light] = current_light.serialize()
                 elif bridge_config["lights_address"][light]["protocol"] == "domoticz":
                     # domoticz protocol
                     url = "http://{}/json.htm?type=devices&rid={}".format(

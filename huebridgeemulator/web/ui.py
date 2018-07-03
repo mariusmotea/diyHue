@@ -14,6 +14,14 @@ from huebridgeemulator.web.templates import get_template, get_static
 from huebridgeemulator.http.websocket import scanDeconz
 
 
+MIMETYPES = {"json": "application/json",
+             "map": "application/json", 
+             "html": "text/html",
+             "xml": "application/xml",
+             "js": "text/javascript",
+             "css": "text/css",
+             "png": "image/png"}
+
 @hug.get('/', output=hug.output_format.html)
 @hug.get('/{filename}.{ext}', output=hug.output_format.html)
 @hug.get('/static/{filename}.{ext}', output=hug.output_format.html)
@@ -23,6 +31,7 @@ def root(request, response, filename="index", ext="html"):
     if request.path == "/":
         return hug.redirect.to('index.html')
     try:
+        response.set_header('Content-type', MIMETYPES.get(ext, "text/html"))
         return get_static(request.path)
     except FileNotFoundError:
         response.status = HTTP_404

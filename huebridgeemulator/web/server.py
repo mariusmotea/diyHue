@@ -29,19 +29,19 @@ def with_other_apis():
     return [ui, scenes, common, config, groups, lights, sensors]
 
 
-def start(conf_obj, sensors_state):
+def start(registry, sensors_state):
 
     @hug.request_middleware()
     def create_context(request, response):
-        request.context['conf_obj'] = conf_obj
+        request.context['conf_obj'] = registry
+        request.context['registry'] = registry
         request.context['mac'] = '%012x' % get_mac()
         request.context['sensors_state'] = sensors_state
         request.context['new_lights'] = {}
 
-
     # TODO add port
     api = hug.API(__name__)
     host = ''
-    port = 80
+    port = 8080
     http_logger.info("Start HTTP server")
     api.http.serve(host=host, port=port)
