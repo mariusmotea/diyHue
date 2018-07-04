@@ -8,8 +8,8 @@ def uid_authorized(request, response, verify_user, context=None, **kwargs):
     if len(url_pices) < 3:
         raise
     uid = url_pices[2]
-    bridge_config = request.context['conf_obj'].bridge
-    if not verify_user(bridge_config["config"]["whitelist"], uid):
+    registry = request.context['registry']
+    if not verify_user(registry.config["whitelist"], uid):
         response.data = [{"error": {"type": 1, "address": request.path, "description": "unauthorized user" }}]
         http_logger.warning("User key %s unauthorized", uid)
         return False

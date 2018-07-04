@@ -38,8 +38,10 @@ def api_get_groups_new(uid, request, response):
 
 @hug.get('/api/{uid}/groups')
 def api_get_groups(uid, request, response):
-    bridge_config = request.context['conf_obj'].bridge
-    return bridge_config['groups']
+    output = {}
+    for index, group in request.context['registry'].groups.items():
+        output[index] = group.serialize()
+    return output
 
 @hug.get('/api/{uid}/groups/0', requires=authorized)
 def api_get_groups_0(uid, request, response):

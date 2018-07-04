@@ -1,4 +1,22 @@
 import pytz
+import time
+
+
+RESOURCE_TYPES = [
+  "alarm_config",
+  "capabilities",
+  "config",
+  "deconz",
+  "groups",
+  "lights",
+  "lights_address",
+  "linkbutton",
+  "resourcelinks",
+  "rules",
+  "scenes",
+  "schedules",
+  "sensors"
+]
 
 
 LIGHT_TYPES = {
@@ -66,6 +84,19 @@ LIGHT_TYPES = {
     }
 }
 
+# TODO should we transform this to a class ?
+REGISTRY_ALARM_CONFIG = {
+    "mail_from": "your_email@gmail.com",
+    "mail_password": "",
+    "mail_recipients": [
+        "first_recipient@mail.com",
+        "second_recipient@mail.com"
+    ],
+    "mail_subject": "HUE ALARM TRIGGERED!",
+    "mail_username": "",
+    "smtp_port": 465,
+    "smtp_server": "smtp.gmail.com"
+}
 
 REGISTRY_CAPABILITIES = {
   "groups": {
@@ -177,3 +208,17 @@ REGISTRY_BASE_CONFIG = {
     "starterkitid": "",
     "whitelist": {}
 }
+
+REGISTRY_DECONZ = {
+    "enabled": False,
+    "lights": {},
+    "port": 8080,
+    "sensors": {}
+}
+
+REGISTRY_LINKBUTTON = {
+    "lastlinkbuttonpushed": int(time.time()),
+    # TODO what is this stuff ???
+    "linkbutton_auth": "SHVlOkh1ZQ==",
+}
+

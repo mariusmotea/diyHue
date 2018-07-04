@@ -69,7 +69,7 @@ class BaseResource(BaseObject):
         BaseObject.__init__(self, raw_data)
         if self._RESOURCE_TYPE is None:
             raise Exception("You must define _RESOURCE_TYPE class variable")
-        from huebridgeemulator.config import registry
+        from huebridgeemulator.registry import registry
         self._registry = registry
         self.index = self._registry.nextFreeId(self._RESOURCE_TYPE.lower())
         # logger
@@ -79,13 +79,14 @@ class BaseResource(BaseObject):
 
     def serialize(self):
         ret = {}
-        attrs = self._MANDATORY_ATTRS + self._OPTIONAL_ATTRS
-        for attr in attrs:
+        keys = self._MANDATORY_ATTRS + self._OPTIONAL_ATTRS
+        for key in keys:
+            attr = get_class_attr(key)
             if not hasattr(self, attr):
-                ret[get_dict_key(attr)] = None
+                ret[key] = None
             else:
                 if hasattr(getattr(self, attr), 'serialize'):
-                    ret[get_dict_key(attr)] = getattr(self, attr).serialize()
+                    ret[key] = getattr(self, attr).serialize()
                 else:
-                    ret[get_dict_key(attr)] = getattr(self, attr)
+                    ret[key] = getattr(self, attr)
         return ret

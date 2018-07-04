@@ -21,12 +21,12 @@ from huebridgeemulator.web.tools import authorized
 @hug.get('/description.xml',  output=hug.output_format.html)
 def hue_description(request, response):
     print("/description.xml/description.xml/description.xml/description.xml/description.xml/description.xml")
-    bridge_config = request.context['conf_obj'].bridge
+    registry = request.context['registry']
     response.set_header('Content-type', 'application/xml')
 #    description(bridge_config["config"]["ipaddress"], mac)
     template = get_template('description.xml.j2')
-    return template.render({'ip': bridge_config["config"]["ipaddress"],
-                            'mac': request.context['mac']})
+    return template.render({'ip': registry.config["ipaddress"],
+                            'mac': registry.config['mac']})
 
 
 @hug.get('/api/{uid}', requires=authorized)

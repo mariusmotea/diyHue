@@ -38,8 +38,11 @@ def api_get_lights_new(uid, resource_type, request, response):
 
 @hug.get('/api/{uid}/lights', requires=authorized)
 def api_get_lights(uid, request, response):
-    return request.context['conf_obj'].bridge['lights']
-    return request.context['conf_obj'].get_lights()
+    registry = request.context['conf_obj']
+    output = {}
+    for index, light in registry.lights.items():
+            output[index] = light.serialize()
+    return output
 
 
 @hug.post('/api/{uid}/lights', requires=authorized)
