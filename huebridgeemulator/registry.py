@@ -109,6 +109,8 @@ class Registry(object):
             # Save to file
             self.save()
         # TODO add yaml
+        print("L"*555)
+        print(1)
         with open(self.filepath, 'r') as cfs:
             raw_file = json.load(cfs)
             # alarm_config
@@ -120,7 +122,7 @@ class Registry(object):
             self.deconz = raw_file['deconz']
             # Groups
             for index, group in raw_file['groups'].items():
-                self.groups[index] = Group(group)
+                self.groups[index] = Group(group, index)
             # Lights
             for index, light_address in raw_file['lights_address'].items():
                 light = raw_file['lights'][index]
@@ -128,18 +130,19 @@ class Registry(object):
                 if light_address['protocol'] == 'yeelight':
                     light['state'] = LightState(light['state'])
                     light['address'] = YeelightLightAddress(light_address)
-                    new_light = YeelightLight(light)
+                    new_light = YeelightLight(light, index)
                     self.lights[index] = new_light
                 elif light_address['protocol'] == 'hue':
                     light['state'] = LightState(light['state'])
                     light['address'] = HueLightAddress(light_address)
-                    new_light = HueLight(light)
+                    new_light = HueLight(light, index)
                     self.lights[index] = new_light
             # linkButton
             self.linkbutton = LinkButton(raw_file['linkbutton'])
             # Scenes
             for index, scene in raw_file['scenes'].items():
-                self.scenes[index] = Scene(scene)
+                self.scenes[index] = Scene(scene, index)
+
             # Sensors
             for index, sensor in raw_file['sensors'].items():
                 self.sensors[index] = Sensor(sensor)
@@ -163,13 +166,10 @@ class Registry(object):
         output['lights_address'] = {}
         output['lights'] = {}
         for index, light in self.lights.items():
-#            print(index, light)
             output['lights_address'][index] = light.address.serialize()
             output['lights'][index] = light.serialize()
             if 'address' in output['lights'][index]:
                 del(output['lights'][index]['address'])
-#            output['lights'][index]['state'] = output['lights'][index]['state'].serialize()
-#            print(output['lights'][index])
         # linkbutton
         output['linkbutton'] = self.linkbutton.serialize()
         # TODO resourcelinks

@@ -42,19 +42,28 @@ class BaseObject():
     _OPTIONAL_ATTRS = ()
 
     def __init__(self, raw_data):
-        # Check keys
+        # Check mandatory keys
         for attr in self._MANDATORY_ATTRS:
             if attr not in raw_data:
                 raise Exception("Key `{}` missing".format(attr))
             setattr(self, get_class_attr(attr), raw_data[attr])
+        # Add only existing optional attributes
         for attr in self._OPTIONAL_ATTRS:
-            setattr(self, get_class_attr(attr), raw_data.get(attr))
+            if attr in raw_data:
+                setattr(self, get_class_attr(attr), raw_data.get(attr))
 
     def serialize(self):
         ret = {}
-        attrs = self._MANDATORY_ATTRS + self._OPTIONAL_ATTRS
-        for attr in attrs:
-            ret[get_dict_key(attr)] = getattr(self, attr)
+        keys = self._MANDATORY_ATTRS + self._OPTIONAL_ATTRS
+        # Add all mandatory attributes
+        for key in self._MANDATORY_ATTRS:
+            attr = get_class_attr(key)
+            ret[key] = getattr(self, attr)
+        # Add only existing optional attributes 
+        for key in self._OPTIONAL_ATTRS:
+            attr = get_class_attr(key)
+            if hasattr(self, attr):
+                ret[key] = getattr(self, attr)
         return ret
 
     def toJSON(self):
@@ -65,17 +74,18 @@ class BaseResource(BaseObject):
 
     _RESOURCE_TYPE = None
 
-    def __init__(self, raw_data):
+    def __init__(self, raw_data, index=None):
         BaseObject.__init__(self, raw_data)
         if self._RESOURCE_TYPE is None:
             raise Exception("You must define _RESOURCE_TYPE class variable")
         from huebridgeemulator.registry import registry
         self._registry = registry
-        self.index = self._registry.nextFreeId(self._RESOURCE_TYPE.lower())
+        # Set index
+        self.index = index
+        if self.index is None:
+            self.index = self._registry.nextFreeId(self._RESOURCE_TYPE.lower())
         # logger
         self.logger = main_logger.getChild(self._RESOURCE_TYPE.lower()).getChild(self.index)
-        # Add to the registry
-        self._registry.add_new_resource(self)
 
     def serialize(self):
         ret = {}
