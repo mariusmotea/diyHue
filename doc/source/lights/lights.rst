@@ -10,7 +10,8 @@ Supported devices are:
 * generic pwm rgb-cct lights (5 chnnels - ex Milight FUT015)
 * SK6812 neopixels
 * WS2812B neopixels
-* all ZigBee lights - check Raspbee module page (link to https://github.com/mariusmotea/diyHue/wiki/6.-Raspbee-module)
+* all ZigBee lights - check :ref:`raspbee` module page
+
 
 Lot of Wi-Fi lights from the market are esp8266 based and can be used very easy with this project by flashing the firmware with the one provided.
 Almost all dimmable lights that are not esp8266 based (ex MiLight bulbs) can be converted to wifi with one esp-12s module by connecting the outputs directly to led drivers (picture available).

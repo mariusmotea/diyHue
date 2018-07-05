@@ -11,8 +11,9 @@ Welcome to HueBridgeEmulator's documentation!
     :caption: Contents:
 
     getting_started
-    lights
-    devices/index
+    lights/index
+    alarm
+    sensors
     refs/modules
 
 
