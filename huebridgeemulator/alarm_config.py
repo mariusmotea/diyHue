@@ -1,6 +1,6 @@
-from huebridgeemulator.common import BaseResource
+from huebridgeemulator.common import BaseObject
 
-class AlarmConfig(BaseResource):
+class AlarmConfig(BaseObject):
 
     _RESOURCE_TYPE = "alarm_config"
     _MANDATORY_ATTRS = ('mail_from', 'mail_password', 'mail_recipients',

@@ -20,7 +20,7 @@ from huebridgeemulator.device.hue.light import HueLight, HueLightAddress
 from huebridgeemulator.alarm_config import AlarmConfig
 from huebridgeemulator.scene import Scene
 from huebridgeemulator.sensor import Sensor, generate_daylight_sensor
-from huebridgeemulator.group import Group
+from huebridgeemulator.group import Group, ActionGroup, StateGroup
 from huebridgeemulator.linkbutton import LinkButton
 from huebridgeemulator.const import (REGISTRY_CAPABILITIES, REGISTRY_BASE_CONFIG,
     RESOURCE_TYPES, REGISTRY_ALARM_CONFIG, REGISTRY_DECONZ, REGISTRY_LINKBUTTON)
@@ -122,6 +122,8 @@ class Registry(object):
             self.deconz = raw_file['deconz']
             # Groups
             for index, group in raw_file['groups'].items():
+                group['action'] = ActionGroup(group['action'])
+                group['state'] = StateGroup(group['state'])
                 self.groups[index] = Group(group, index)
             # Lights
             for index, light_address in raw_file['lights_address'].items():
@@ -147,8 +149,7 @@ class Registry(object):
             for index, sensor in raw_file['sensors'].items():
                 self.sensors[index] = Sensor(sensor)
 
-    def save(self, output_file=None):
-        """Write configuration to file."""
+    def serialize(self):
         output = {}
         # Alarm config
         output['alarm_config'] = self.alarm_config.serialize()
@@ -156,9 +157,9 @@ class Registry(object):
         output['capabilities'] = self.capabilities
         # Config
         output['config'] = self.config
-        # TODO Deconz
+        # Deconz
         output['deconz'] = self.deconz
-        # TODO groups
+        # groups
         output['groups'] = {}
         for index, group in self.groups.items():
             output['groups'][index] = group.serialize()
@@ -182,10 +183,17 @@ class Registry(object):
             output['scenes'][index] = scene.serialize()
         # TODO schedules
         output['schedules'] = self.schedules
-        # TODO sensors
+        # sensors
         output['sensors'] = {}
         for index, sensor in self.sensors.items():
             output['sensors'][index] = sensor.serialize()
+
+        return output
+
+
+    def save(self, output_file=None):
+        """Write configuration to file."""
+        output = self.serialize()
         # Save
         if output_file is None:
             output_file = self.filepath
@@ -211,31 +219,28 @@ class Registry(object):
         return str(next_index)
 
     def generate_sensors_state(self, sensors_state):
-        for sensor in self.sensors:
-            if sensor not in sensors_state and "state" in self.sensors[sensor]:
+        for index, sensor in self.sensors.items():
+            if index not in sensors_state and hasattr(sensor, "state"):
                 sensors_state[sensor] = {"state": {}}
-                for key in self.sensors[sensor]["state"].keys():
+                for key in sensor.state.keys():
                     if key in ["lastupdated", "presence", "flag", "dark", "daylight", "status"]:
                         sensors_state[sensor]["state"].update({key: "2017-01-01T00:00:00"})
         return sensors_state
 
-
-
-
-    def add_new_resource(self, resource):
-        resource_type = resource._RESOURCE_TYPE
-        if resource_type is None:
-            raise
-        getattr(self, resource_type)[resource.index] = resource
-        if resource_type == "lights":
-            self._new_lights.update({resource.index: {"name": resource.name}})
-            self._new_lights.update({"lastscan": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")})
+    def add_new_light(self, light):
+        """Add new light in the new light dict."""
+        self._new_lights.update({light.index: {"name": light.name}})
+        self._new_lights.update({"lastscan": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")})
 
     def get_new_lights(self):
+        """Return new lights dict."""
         return self._new_lights
 
     def clear_new_lights(self):
         self._new_lights.clear()
+
+
+
 
     def get_resource(self, type, index):
         """Get light from index"""

@@ -8,7 +8,7 @@ import socket
 
 from subprocess import check_output
 
-from huebridgeemulator.http.websocket import scanDeconz
+from huebridgeemulator.tools.deconz import scanDeconz
 from huebridgeemulator.device.tradfri import scanTradfri
 from huebridgeemulator.device.yeelight import discoverYeelight
 from huebridgeemulator.tools.colors import convert_rgb_xy, convert_xy
@@ -68,7 +68,7 @@ def getIpAddress():
 
 
 def scanForLights(conf_obj, new_lights): #scan for ESP8266 lights and strips
-    Thread(target=discoverYeelight, args=[conf_obj, new_lights]).start()
+    Thread(target=discoverYeelight, args=[conf_obj]).start()
     #return all host that listen on port 80
     device_ips = check_output("nmap  " + getIpAddress() + "/24 -p80 --open -n | grep report | cut -d ' ' -f5", shell=True).decode('utf-8').split("\n")
     pprint(device_ips)
@@ -104,24 +104,6 @@ def scanForLights(conf_obj, new_lights): #scan for ESP8266 lights and strips
     # TODO activatethis
     #scanTradfri()
     conf_obj.save()
-
-
-def updateGroupStats(conf_obj, light): #set group stats based on lights status in that group
-    bridge_config = conf_obj.bridge
-    for group in bridge_config["groups"]:
-        if "lights" in bridge_config["groups"][group] and light in bridge_config["groups"][group]["lights"]:
-            for key, value in bridge_config["lights"][light]["state"].items():
-                if key in ["bri", "xy", "ct", "hue", "sat"]:
-                    bridge_config["groups"][group]["action"][key] = value
-            any_on = False
-            all_on = True
-            for group_light in bridge_config["groups"][group]["lights"]:
-                if bridge_config["lights"][light]["state"]["on"] == True:
-                    any_on = True
-                else:
-                    all_on = False
-            bridge_config["groups"][group]["state"] = {"any_on": any_on, "all_on": all_on,}
-            bridge_config["groups"][group]["action"]["on"] = any_on
 
 
 def sendLightRequest(conf_obj, light, data):

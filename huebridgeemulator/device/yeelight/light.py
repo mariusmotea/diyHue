@@ -20,14 +20,12 @@ class YeelightLight(Light):
         msg = json.dumps({"id": 1, "method": "get_prop", "params":["power","bright"]}) + "\r\n"
         tcp_socket.send(msg.encode())
         data = tcp_socket.recv(16 * 1024)
+        # TODO use  python yeelight lib wuth music mode ti workaround the connection limit
         light_data = json.loads(data[:-2].decode("utf8"))["result"]
         if light_data[0] == "on": #powerstate
-#            bridge_config["lights"][light]["state"]["on"] = True
             self.state.on = True
         else:
-#            bridge_config["lights"][light]["state"]["on"] = False
             self.state.on = False
-#        bridge_config["lights"][light]["state"]["bri"] = int(int(light_data[1]) * 2.54)
         self.state.bri = int(int(light_data[1]) * 2.54)
         msg_mode=json.dumps({"id": 1, "method": "get_prop", "params":["color_mode"]}) + "\r\n"
         tcp_socket.send(msg_mode.encode())

@@ -40,7 +40,7 @@ https/key.pem: _https/keys
 https_generate: https/dh1028.pem
 	mkdir -p https
 	cd https && openssl req -nodes -new -newkey rsa:4096 -out csr.pem -sha256
-	cd https && openssl req -x509 -newkey rsa:4086 -keyout key.pem -out cert.pem -days 3650 -nodes -sha256
+	cd https && openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 3650 -nodes -sha256
 
 ### Web UI ###
 gen_ui:

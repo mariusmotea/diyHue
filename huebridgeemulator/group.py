@@ -3,10 +3,11 @@ from huebridgeemulator.common import BaseResource, BaseObject
 
 class ActionGroup(BaseObject):
 
-    _MANDATORY_ATTRS = ('bri', 'ct', 'hue', 'on', 'sat', 'xy')
+    _MANDATORY_ATTRS = ('on', )
+    _OPTIONAL_ATTRS = ('bri', 'ct', 'hue', 'sat', 'xy')
 
 
-class ActionState(BaseObject):
+class StateGroup(BaseObject):
 
     _MANDATORY_ATTRS = ('all_on', 'any_on')
 

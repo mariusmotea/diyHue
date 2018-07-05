@@ -68,19 +68,20 @@ def save(request, response):
 authentication = hug.authentication.basic(hug.authentication.verify('Hue', 'Hue'))
 @hug.get('/hue/linkbutton', requires=authentication, output=hug.output_format.html)
 def linkbutton(request, response):
-    bridge_config = request.context['conf_obj'].bridge
+    # TODO Change user/password
+    registry = request.context['registry']
     template = get_template('webform_linkbutton.html.j2')
     if request.params.get('action') == "Activate":
-        bridge_config["config"]["linkbutton"] = False
-        bridge_config["linkbutton"]["lastlinkbuttonpushed"] = datetime.now().strftime("%s")
-        request.context['conf_obj'].save()
+        registry.config["linkbutton"] = False
+        registry.linkbutton.lastlinkbuttonpushed = datetime.now().strftime("%s")
+        registry.save()
         return template.render({"message": "You have 30 sec to connect your device"})
     elif request.params.get('action') == "Exit":
         return 'You are succesfully disconnected'
     elif request.params.get('action') == "ChangePassword":
         tmp_password = str(base64.b64encode(bytes(request.params["username"][0] + ":" + request.params["password"][0], "utf8"))).split('\'')
-        bridge_config["linkbutton"]["linkbutton_auth"] = tmp_password[1]
-        request.context['conf_obj'].save()
+        registry.linkbutton.linkbutton_auth = tmp_password[1]
+        registry.save()
         return template.render({"message": "Your credentials are succesfully change. Please logout then login again"})
     else:
         return template.render({})

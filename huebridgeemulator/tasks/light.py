@@ -8,7 +8,7 @@ from subprocess import check_output
 from time import sleep
 
 from huebridgeemulator.tools.colors import convert_rgb_xy
-from huebridgeemulator.tools.light import updateGroupStats
+from huebridgeemulator.tools.group import update_group_status
 from huebridgeemulator.http.client import sendRequest
 from huebridgeemulator.logger import sync_with_lights_logger
 
@@ -102,26 +102,7 @@ def sync_with_lights(registry):
 
                 light.state.reachable = True
                 # Update groups status
-                # updateGroupStats(conf_obj, light)
-                for group in registry.groups:
-                    if hasattr(registry.groups[group], "lights") and \
-                    isinstance(registry.groups[group].lights, list) and \
-                    light in registry.groups[group].lights:
-                        registry.groups[group].action.bri = registry.lights[light].state.bri
-                        registry.groups[group].action.xy = registry.lights[light].state.xy
-                        registry.groups[group].action.ct = registry.lights[light].state.ct
-                        registry.groups[group].action.hue = registry.lights[light].state.hue
-                        registry.groups[group].action.sat = registry.lights[light].state.sat
-                        any_on = False
-                        all_on = True
-                        for group_light in registry.groups[group].lights:
-                            if registry.lights[light].state.on == True:
-                                any_on = True
-                            else:
-                                all_on = False
-                        registry.groups[group].state.any_on = any_on
-                        registry.groups[group].state.all_on = all_on
-                        registry.groups[group].action.on = any_on
+                update_group_status(registry, light)
             except Exception as exp:
                 sync_with_lights_logger.warning(exp)
                 light.set_unreachable()

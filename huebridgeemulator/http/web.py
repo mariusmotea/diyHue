@@ -19,7 +19,7 @@ from uuid import getnode as get_mac
 from threading import Thread
 from huebridgeemulator.config import saveConfig
 from huebridgeemulator.tools import generateSensorsState
-from huebridgeemulator.tools.light import scanForLights, updateGroupStats, sendLightRequest
+from huebridgeemulator.tools.light import scanForLights, sendLightRequest
 from huebridgeemulator.http.client import sendRequest
 from huebridgeemulator.functions import *
 

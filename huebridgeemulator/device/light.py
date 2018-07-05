@@ -17,6 +17,7 @@ class Light(BaseResource):
 
     def serialize(self):
         # FIXME should be not different from BaseResource
+        # Or at least use super
         ret = BaseResource.serialize(self)
         del(ret['address'])
         return ret

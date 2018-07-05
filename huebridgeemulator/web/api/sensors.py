@@ -29,16 +29,18 @@ def api_get_sensors_id(uid, resource_id, request, response):
 @hug.get('/api/{uid}/sensors/new', requires=authorized)
 def api_get_sensors_new(uid, request, response):
     """return new lights and sensors only."""
-    bridge_config = request.context['conf_obj'].bridge
-    response = request.context['conf_obj'].get_new_lights()
-    request.context['conf_obj'].clear_new_lights()
+    registry = request.context['registry']
+    response = registry.get_new_lights()
+    registry.clear_new_lights()
     return response
 
 
 @hug.get('/api/{uid}/sensors')
 def api_get_lights(uid, request, response):
-    bridge_config = request.context['conf_obj'].bridge
-    return bridge_config['sensors']
+    registry = request.context['registry']
+    output = dict([(index, sensor.serialize())
+                   for index, sensor in registry.sensors.items()])
+    return output
 
 
 @hug.post('/api/{uid}/sensor', requires=authorized)

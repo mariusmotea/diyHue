@@ -28,3 +28,5 @@ class Sensor(BaseResource):
     _MANDATORY_ATTRS = ("config", "manufacturername", "modelid",
                         "name", "state", "swversion", "type")
     _OPTIONAL_ATTRS = ()
+
+    # Should we create SensorState class ???

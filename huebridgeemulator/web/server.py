@@ -8,6 +8,7 @@ import requests
 import hug
 from jinja2 import FileSystemLoader, Environment
 
+
 from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.web.templates import get_template
 from huebridgeemulator.http.websocket import scanDeconz
@@ -20,8 +21,8 @@ from huebridgeemulator.web.api import lights
 from huebridgeemulator.web.api import sensors
 from huebridgeemulator.logger import http_logger
 
-
-
+# TODO Add pylint disable...
+import huebridgeemulator.web.hack
 
 
 @hug.extend_api()
@@ -30,7 +31,6 @@ def with_other_apis():
 
 
 def start(registry, sensors_state):
-
     @hug.request_middleware()
     def create_context(request, response):
         request.context['conf_obj'] = registry
@@ -41,7 +41,9 @@ def start(registry, sensors_state):
 
     # TODO add port
     api = hug.API(__name__)
+
     host = ''
     port = 8080
     http_logger.info("Start HTTP server")
+
     api.http.serve(host=host, port=port)
