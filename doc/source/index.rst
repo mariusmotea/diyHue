@@ -10,6 +10,9 @@ Welcome to HueBridgeEmulator's documentation!
     :maxdepth: 2
     :caption: Contents:
 
+    getting_started
+    lights
+    devices/index
     refs/modules
 
 
