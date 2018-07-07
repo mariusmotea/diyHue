@@ -1,13 +1,12 @@
 #!/usr/bin/python3
 from collections import defaultdict
 from threading import Thread
-from uuid import getnode as get_mac
 from time import sleep
 import argparse
 
 
 from huebridgeemulator.http.websocket import scanDeconz
-from huebridgeemulator.config import saveConfig, loadConfig, Config
+from huebridgeemulator.registry import registry
 from huebridgeemulator.tools import getIpAddress, generateSensorsState
 from huebridgeemulator.tasks.ssdp import ssdp_search, ssdp_broadcast
 from huebridgeemulator.tasks.scheduler import scheduler_processor
@@ -33,25 +32,23 @@ def main():
     update_lights_on_startup = False # if set to true all lights will be updated with last know state on startup.
 
     # Load config
-    conf_obj = Config(args.config_file)
-    bridge_config = conf_obj.bridge
+    registry.set_filepath(args.config_file)
 
-    bridge_config, sensors_state = generateSensorsState(bridge_config, sensors_state)
-
-    if bridge_config["deconz"]["enabled"]:
+    if registry.deconz["enabled"]:
         scanDeconz()
+    registry.save()
     try:
         run_service = True
-        mac = '%012x' % get_mac()
+       # scheduler_processor(registry, sensors_state, run_service)
         if update_lights_on_startup:
             updateAllLights()
         Thread(target=ssdp_search).start()
         Thread(target=ssdp_broadcast).start()
-        Thread(target=scheduler_processor, args=[conf_obj, sensors_state, run_service]).start()
-        Thread(target=sync_with_lights, args=[conf_obj]).start()
-#        Thread(target=run, args=[False, conf_obj, sensors_state]).start()
-#        Thread(target=run, args=[True, conf_obj, sensors_state]).start()
-        Thread(target=start, args=[conf_obj, sensors_state]).start()
+        Thread(target=scheduler_processor, args=[registry, sensors_state, run_service]).start()
+        Thread(target=sync_with_lights, args=[registry]).start()
+#        Thread(target=run, args=[False, registry, sensors_state]).start()
+#        Thread(target=run, args=[True, registry, sensors_state]).start()
+        Thread(target=start, args=[registry, sensors_state]).start()
         main_logger.info("Main loop starting")
         while True:
             main_logger.debug("Main loop run")
@@ -60,7 +57,7 @@ def main():
         print("server stopped " + str(e))
     finally:
         run_service = False
-        conf_obj.save()
+        registry.save()
         print('config saved')
 
 

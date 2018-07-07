@@ -20,9 +20,7 @@ import huebridgeemulator.web.ui
 
 @hug.get('/api/{uid}/config')
 def api_get_config(uid, request, response):
-    print("api_get_config")
-    bridge_config = request.context['conf_obj'].bridge
-    return bridge_config['config']
+    return request.context['registry'].config
 
 @hug.get('/api/node')
 @hug.get('/api/config')
@@ -31,12 +29,12 @@ def api_get_config(uid, request, response):
 def api_get_discover(request, response):
     """used by applications to discover the bridge."""
     print("api_get_discoverapi_get_discoverapi_get_discoverapi_get_discoverapi_get_discover")
-    bridge_config = request.context['conf_obj'].bridge
-    return {"name": bridge_config["config"]["name"],
+    registry = request.context['registry']
+    return {"name": registry.config["name"],
             "datastoreversion": 59,
-            "swversion": bridge_config["config"]["swversion"],
-            "apiversion": bridge_config["config"]["apiversion"],
-            "mac": bridge_config["config"]["mac"],
-            "bridgeid": bridge_config["config"]["bridgeid"],
+            "swversion": registry.config["swversion"],
+            "apiversion": registry.config["apiversion"],
+            "mac": registry.config["mac"],
+            "bridgeid": registry.config["bridgeid"],
             "factorynew": False,
-            "modelid": bridge_config["config"]["modelid"]}
+            "modelid": registry.config["modelid"]}

@@ -11,12 +11,13 @@ from jinja2 import FileSystemLoader, Environment
 from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.web.templates import get_template
 from huebridgeemulator.http.websocket import scanDeconz
-from huebridgeemulator.tools.light import scanForLights, updateGroupStats, sendLightRequest
+from huebridgeemulator.tools.light import scanForLights, sendLightRequest
 from threading import Thread
 import time
 
 import huebridgeemulator.web.ui
 from huebridgeemulator.web.tools import authorized
+from huebridgeemulator.group import Group, ActionGroup, StateGroup
 
 
 @hug.get('/api/{uid}/groups/{resource_id}', requires=authorized)
@@ -37,8 +38,10 @@ def api_get_groups_new(uid, request, response):
 
 @hug.get('/api/{uid}/groups')
 def api_get_groups(uid, request, response):
-    bridge_config = request.context['conf_obj'].bridge
-    return bridge_config['groups']
+    output = {}
+    for index, group in request.context['registry'].groups.items():
+        output[index] = group.serialize()
+    return output
 
 @hug.get('/api/{uid}/groups/0', requires=authorized)
 def api_get_groups_0(uid, request, response):
@@ -70,18 +73,17 @@ def api_get_groups_0(uid, request, response):
 
 @hug.post('/api/{uid}/groups', requires=authorized)
 def api_post_groups(uid, body, request, response):
-    bridge_config = request.context['conf_obj'].bridge
+    registry = request.context['registry']
     post_dictionary = body
     print("create objectcreate objectcreate objectcreate objectcreate object")
     print(request.path)
-    # find the first unused id for new object
-    new_object_id = request.context['conf_obj'].nextFreeId('groups')
-    post_dictionary.update({"action": {"on": False}, "state": {"any_on": False, "all_on": False}})
-    generateSensorsState(bridge_config, request.context['sensors_state'])
-    bridge_config['groups'][new_object_id] = post_dictionary
-    request.context['conf_obj'].save()
-    print(json.dumps([{"success": {"id": new_object_id}}], sort_keys=True, indent=4, separators=(',', ': ')))
-    return [{"success": {"id": new_object_id}}]
+    post_dictionary.update({"action": ActionGroup({"on": False}),
+                            "state": StateGroup({"any_on": False, "all_on": False})})
+    registry.generate_sensors_state(request.context['sensors_state'])
+    new_group = Group(post_dictionary) 
+    registry.groups[new_group.index] = new_group
+    registry.save()
+    return [{"success": {"id": new_group.index}}]
 
 
 @hug.delete('/api/{uid}/groups/{resource_id}', requires=authorized)

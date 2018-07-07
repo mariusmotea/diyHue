@@ -9,5 +9,9 @@ def get_template(name):
 
 def get_static(name):
     filepath = os.path.join(_DIR_PATH, "web-ui", name.strip("/"))
-    with open(filepath) as sfh:
-        return sfh.read()
+    try:
+        with open(filepath, "r") as sfh:
+            return sfh.read()
+    except UnicodeDecodeError:
+        with open(filepath, "rb") as sfh:
+            return sfh.read()

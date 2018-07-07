@@ -1,4 +1,5 @@
 from collections import defaultdict
+import copy
 from huebridgeemulator.tools import getIpAddress
 from uuid import getnode as get_mac
 from datetime import datetime
@@ -7,9 +8,26 @@ import sys
 
 import yaml
 
-from huebridgeemulator.device.yeelight.light import YeelightLight
+from huebridgeemulator.device.light import LightState
+from huebridgeemulator.device.yeelight.light import YeelightLight, YeelightLightAddress
 from huebridgeemulator.device.hue.light import HueLight
 from huebridgeemulator.scene import Scene
+
+RESOURCE_TYPES = [
+  "alarm_config",
+  "capabilities",
+  "config",
+  "deconz",
+  "groups",
+  "lights",
+  "lights_address",
+  "linkbutton",
+  "resourcelinks",
+  "rules",
+  "scenes",
+  "schedules",
+  "sensors"
+]
 
 
 def loadConfig(filename):  #load and configure alarm virtual light
@@ -46,8 +64,7 @@ def saveConfig(filename, bridge_config):
 class Config(object):
     """Configuration class."""
 
-    def __init__(self, filepath):
-
+    def __init__(self, filepath=None):
         self.filepath = filepath
         # TODO: is this useless ?
         self.bridge = defaultdict(lambda:defaultdict(str))
@@ -56,11 +73,14 @@ class Config(object):
         self.lights = {}
         # scenes registry
         self.scenes = {}
+        # groups registry
+        self.groups = {}
         # just added lights
         self._new_lights = {}
         # Load from file
-        self.load()
-        self._startup()
+        if filepath is not None:
+            self.load()
+            self._startup()
 
     def _startup(self):
         ip_pices = getIpAddress().split(".")
@@ -69,6 +89,12 @@ class Config(object):
         self.bridge["config"]["mac"] = self._mac[0] + self._mac[1] + ":" + self._mac[2] + self._mac[3] + ":" + self._mac[4] + self._mac[5] + ":" + self._mac[6] + self._mac[7] + ":" + self._mac[8] + self._mac[9] + ":" + self._mac[10] + self._mac[11]
         self.bridge["config"]["bridgeid"] = (self._mac[:6] + 'FFFE' + self._mac[6:]).upper()
 
+    def set_filepath(self, filepath):
+        self.filepath = filepath
+        # Load from file
+        if filepath is not None:
+            self.load()
+            self._startup()
 
     def load(self):
         """Read configuration from file"""
@@ -78,7 +104,9 @@ class Config(object):
             for index, light_address in self.bridge['lights_address'].items():
                 light = self.bridge['lights'][index]
                 if light_address['protocol'] == 'yeelight':
-                    new_light = YeelightLight(index=index, address=light_address, raw=light)
+                    light['state'] = LightState(light['state'])
+                    light['address'] = YeelightLightAddress(light_address)
+                    new_light = YeelightLight(light)
                     self.lights[index] = new_light
                 elif light_address['protocol'] == 'hue':
                     new_light = HueLight(index=index, address=light_address, raw=light)
@@ -88,9 +116,13 @@ class Config(object):
 
     def save(self):
         """Write configuration to file."""
-        # TODO add yaml
+        output = copy.copy(self.bridge)
+        for index in output['lights'].keys():
+            if 'address' in output['lights'][index]:
+                del(output['lights'][index]['address'])
+            output['lights'][index]['state'] = output['lights'][index]['state'].serialize()
         with open(self.filepath, 'w') as cfs:
-            json.dump(self.bridge, cfs, sort_keys=True, indent=4, separators=(',', ': '))
+            json.dump(output, cfs, sort_keys=True, indent=4, separators=(',', ': '))
 
     def backup(self):
         """Backup configuration."""
@@ -105,11 +137,14 @@ class Config(object):
             i += 1
         return str(i)
 
-    def add_new_light(self, light):
-        # Add new light to the lights registry
-        self.lights[light.index] = light
-        self._new_lights.update({light.index: {"name": light.name}})
-        self._new_lights.update({"lastscan": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")})
+    def add_new_resource(self, resource):
+        resource_type = resource._RESOURCE_TYPE
+        if resource_type is None:
+            raise
+        getattr(self, resource_type)[resource.index] = resource
+        if resource_type == "lights":
+            self._new_lights.update({resource.index: {"name": resource.name}})
+            self._new_lights.update({"lastscan": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")})
 
     def get_new_lights(self):
         return self._new_lights
@@ -121,6 +156,7 @@ class Config(object):
         """Get light from index"""
         if type not in ["scenes", "lights"]:
             raise Exception("Bad resources type {}".format(type))
+        self.save()
         return getattr(self, type)[index]
 
     def get_lights(self):
@@ -133,3 +169,7 @@ class Config(object):
     def get_json_lights(self):
         """Return all lights in JSON format."""
         return json.dumps(self.get_lights())
+
+
+# Improve that
+registry = Config()

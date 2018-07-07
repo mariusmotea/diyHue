@@ -6,3 +6,8 @@ env/
 *.egg-info/
 .tox/
 doc/build/
+https/cert.pem
+https/csr.pem
+https/dh.pem
+https/key.pem
+https/privkey.pem

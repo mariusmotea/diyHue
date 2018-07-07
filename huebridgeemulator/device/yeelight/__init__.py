@@ -3,7 +3,8 @@ import random
 import json
 
 from huebridgeemulator.const import LIGHT_TYPES
-from huebridgeemulator.device.yeelight.light import YeelightLight
+from huebridgeemulator.device.yeelight.light import YeelightLight, YeelightLightAddress
+from huebridgeemulator.device.light import LightState
 
 
 
@@ -28,8 +29,7 @@ def sendToYeelight(url, api_method, param):
         print ("Unexpected error:", e)
 
 
-def discoverYeelight(conf_obj, new_lights):
-    bridge_config = conf_obj.bridge
+def discoverYeelight(registry):
     group = ("239.255.255.250", 1982)
     message = "\r\n".join([
         'M-SEARCH * HTTP/1.1',
@@ -41,6 +41,7 @@ def discoverYeelight(conf_obj, new_lights):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
     sock.sendto(message.encode(), group)
+    # FIXME remove while true to do something smarter
     while True:
         try:
             response = sock.recv(1024).decode('utf-8').split("\r\n")
@@ -58,10 +59,11 @@ def discoverYeelight(conf_obj, new_lights):
                     properties["name"] = line[6:]
             device_exist = False
             # Check if the device exists
-            for light in bridge_config["lights_address"].keys():
-                if bridge_config["lights_address"][light]["protocol"] == "yeelight" and  bridge_config["lights_address"][light]["id"] == properties["id"]:
+            for index, light in registry.lights.items():
+                if light.address.protocol == "yeelight" and light.address.id == properties["id"]:
                     device_exist = True
-                    bridge_config["lights_address"][light]["ip"] = properties["ip"]
+                    light.address.ip = properties["ip"]
+                    # TODO LOGGER
                     print("light id " + properties["id"] + " already exist, updating ip...")
                     break
             if (not device_exist):
@@ -72,24 +74,18 @@ def discoverYeelight(conf_obj, new_lights):
                     modelid = "LCT015"
                 elif properties["ct"]:
                     modelid = "LTW001"
-                new_light_id = conf_obj.nextFreeId("lights")
                 address = {"ip": properties["ip"], "id": properties["id"], "protocol": "yeelight"}
                 raw_light = {"type": LIGHT_TYPES[modelid]["type"],
                              "name": light_name,
                              "uniqueid": "4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1",
                              "modelid": modelid,
                              "manufacturername": "yeelight",
-                             "state": LIGHT_TYPES[modelid]["state"],
+                             "state": LightState(LIGHT_TYPES[modelid]["state"]),
+                             "address": YeelightLightAddress(address),
                              "swversion": LIGHT_TYPES[modelid]["swversion"]}
-                new_light = YeelightLight(index=new_light_id,
-                                          address=address,
-                                          raw=raw_light,
-                                          )
-                conf_obj.add_new_light(new_light)
-                bridge_config["lights"][new_light_id] = {"state": LIGHT_TYPES[modelid]["state"], "type": LIGHT_TYPES[modelid]["type"], "name": light_name, "uniqueid": "4a:e0:ad:7f:cf:" + str(random.randrange(0, 99)) + "-1", "modelid": modelid, "manufacturername": "Philips", "swversion": LIGHT_TYPES[modelid]["swversion"]}
-#                new_lights.update({new_light_id: {"name": light_name}})
-                bridge_config["lights_address"][new_light_id] = {"ip": properties["ip"], "id": properties["id"], "protocol": "yeelight"}
-
+                new_light = YeelightLight(raw_light)
+                registry.lights[new_light.index] = new_light
+                registry.add_new_light(new_light)
 
         except socket.timeout as exp:
             print('Yeelight search end')

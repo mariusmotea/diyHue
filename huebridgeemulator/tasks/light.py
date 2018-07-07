@@ -8,37 +8,33 @@ from subprocess import check_output
 from time import sleep
 
 from huebridgeemulator.tools.colors import convert_rgb_xy
-from huebridgeemulator.tools.light import updateGroupStats
+from huebridgeemulator.tools.group import update_group_status
 from huebridgeemulator.http.client import sendRequest
 from huebridgeemulator.logger import sync_with_lights_logger
 
 
 # pylint: disable=R0912
-def sync_with_lights(conf_obj):
+def sync_with_lights(registry):
     """Update Hue Bridge lights states.
 
     .. todo:: add some comments
     """
-    bridge_config = conf_obj.bridge
     sync_with_lights_logger.info("Thread SyncWithLights starting")
     while True:
         sync_with_lights_logger.debug("Sync with lights")
-        for light in bridge_config["lights_address"]:
+        for index, light in registry.lights.items():
             try:
-                if bridge_config["lights_address"][light]["protocol"] == "native":
+                if light.address.protocol == "native":
+                    # TODO
                     url = "http://{}/get?light={}".format(
                         bridge_config["lights_address"][light]["ip"],
                         str(bridge_config["lights_address"][light]["light_nr"]))
                     light_data = json.loads(sendRequest(url, "GET", "{}"))
                     bridge_config["lights"][light]["state"].update(light_data)
-                elif bridge_config["lights_address"][light]["protocol"] == "hue":
-                    url = "http://{}/api/{}/lights/{}".format(
-                        bridge_config["lights_address"][light]["ip"],
-                        bridge_config["lights_address"][light]["username"],
-                        bridge_config["lights_address"][light]["light_id"])
-                    light_data = json.loads(sendRequest(url, "GET", "{}"))
-                    bridge_config["lights"][light]["state"].update(light_data["state"])
-                elif bridge_config["lights_address"][light]["protocol"] == "ikea_tradfri":
+                elif light.address.protocol == "hue":
+                    light.update_status()
+                elif light.address.protocol == "ikea_tradfri":
+                    # TODO
                     command_line = ('./coap-client-linux -m get -u "{}" -k "{}" '
                                     '"coaps://{}:5684/15001/{}"'.format(
                                         bridge_config["lights_address"][light]["identity"],
@@ -60,7 +56,8 @@ def sync_with_lights(conf_obj):
                             bridge_config["lights"][light]["state"]["ct"] = 470
                     else:
                         bridge_config["lights"][light]["state"]["ct"] = 470
-                elif bridge_config["lights_address"][light]["protocol"] == "milight":
+                elif light.address.protocol == "milight":
+                    # TODO
                     url = "http://{}/gateways/{}/{}/{}".format(
                         bridge_config["lights_address"][light]["ip"],
                         bridge_config["lights_address"][light]["device_id"],
@@ -86,11 +83,11 @@ def sync_with_lights(conf_obj):
                             convert_rgb_xy(light_data["color"]["r"],
                                            light_data["color"]["g"],
                                            light_data["color"]["b"])
-                elif bridge_config["lights_address"][light]["protocol"] == "yeelight":
+                elif light.address.protocol == "yeelight":
                     # getting states from the yeelight
-                    current_light = conf_obj.get_resource("lights", light)
-                    bridge_config["lights"][light] = current_light.status()
-                elif bridge_config["lights_address"][light]["protocol"] == "domoticz":
+                    light.update_status()
+                elif light.address.protocol == "domoticz":
+                    # TODO
                     # domoticz protocol
                     url = "http://{}/json.htm?type=devices&rid={}".format(
                         bridge_config["lights_address"][light]["ip"],
@@ -103,20 +100,21 @@ def sync_with_lights(conf_obj):
                     bridge_config["lights"][light]["state"]["bri"] = \
                         str(round(float(light_data["result"][0]["Level"]) / 100 * 255))
 
-                bridge_config["lights"][light]["state"]["reachable"] = True
-                updateGroupStats(conf_obj, light)
+                light.state.reachable = True
+                # Update groups status
+                update_group_status(registry, light)
             except Exception as exp:
-                bridge_config["lights"][light]["state"]["reachable"] = False
-                bridge_config["lights"][light]["state"]["on"] = False
+                sync_with_lights_logger.warning(exp)
+                light.set_unreachable()
                 sync_with_lights_logger.warning("light %s is unreachable", light)
                 raise exp
         sleep(10)  # wait at last 10 seconds before next sync
         i = 0
         while i < 300:  # sync with lights every 300 seconds or instant if one user is connected
-            for user in bridge_config["config"]["whitelist"].keys():
+            for user in registry.config["whitelist"].keys():
                 # FIXME: Why this comparison ? We should compare datetime objects instead of str ?
                 now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-                if bridge_config["config"]["whitelist"][user]["last use date"] == now:
+                if registry.config["whitelist"][user]["last use date"] == now:
                     i = 300
                     break
             sleep(1)

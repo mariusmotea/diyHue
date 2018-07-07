@@ -7,10 +7,12 @@ from huebridgeemulator.tools.colors import convert_xy, convert_rgb_xy
 
 class YeelightLight(Light):
 
-    def __init__(self, index, address, raw):
-        Light.__init__(self, index, address, raw)
+    _RESOURCE_TYPE = "lights"
+    _MANDATORY_ATTRS = ('address', 'state', 'type', 'name', 'uniqueid',
+                        'modelid', 'manufacturername', 'swversion')
+    _OPTIONAL_ATTRS = ()
 
-    def status(self):
+    def update_status(self):
         self.logger.debug(self.serialize())
         tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tcp_socket.settimeout(5)
@@ -18,15 +20,12 @@ class YeelightLight(Light):
         msg = json.dumps({"id": 1, "method": "get_prop", "params":["power","bright"]}) + "\r\n"
         tcp_socket.send(msg.encode())
         data = tcp_socket.recv(16 * 1024)
-       # import ipdb;ipdb.set_trace()
+        # TODO use  python yeelight lib wuth music mode ti workaround the connection limit
         light_data = json.loads(data[:-2].decode("utf8"))["result"]
         if light_data[0] == "on": #powerstate
-#            bridge_config["lights"][light]["state"]["on"] = True
             self.state.on = True
         else:
-#            bridge_config["lights"][light]["state"]["on"] = False
             self.state.on = False
-#        bridge_config["lights"][light]["state"]["bri"] = int(int(light_data[1]) * 2.54)
         self.state.bri = int(int(light_data[1]) * 2.54)
         msg_mode=json.dumps({"id": 1, "method": "get_prop", "params":["color_mode"]}) + "\r\n"
         tcp_socket.send(msg_mode.encode())
@@ -71,8 +70,7 @@ class YeelightLight(Light):
             self.state.colormode = "hs"
         tcp_socket.close()
         self.logger.debug(self.serialize())
-        return self.serialize()
-
+        return
 
     def send_request(self, data):
         payload = {}
@@ -114,42 +112,7 @@ class YeelightLight(Light):
                 raise e
                 print ("Unexpected error:", e)
 
-    def set_address(self, address):
-        # address
-        self.address = YeelightLightAddress(address)
 
-    def read_config(self, raw):
-        self._raw = raw
-        # ???
-        self.type = raw['type']
-        # name
-        self.name = raw['name']
-        # example: 4a:e0:ad:7f:cf:52-1
-        self.uniqueid = raw['uniqueid']
-        # model id
-        self.modelid = raw['modelid']
-        # Can we use something else ?
-        self.manufacturername = raw['manufacturername']
-        # ???
-        self.swversion = raw['swversion']
-
-    def serialize(self):
-        ret = {"type": self.type,
-               "name": self.name,
-               "uniqueid": self.uniqueid,
-               "modelid": self.modelid,
-               "manufacturername": self.manufacturername,
-               "swversion": self.swversion,
-               "state": self.state.serialize(),
-               }
-        return ret
-
-
-class YeelightLightAddress(object):
-    def __init__(self, address):
-        address["protocol"] = "yeelight"
-        LightAddress.__init__(self, address)
-        # Example: "0x00000000033447b4"
-        self.id = address["id"]
-        # Example: "192.168.2.161",
-        self.ip = address["ip"]
+class YeelightLightAddress(LightAddress):
+    protocol = "yeelight"
+    _MANDATORY_ATTRS = ('id', 'ip')

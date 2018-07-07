@@ -12,6 +12,8 @@ Submodules
 .. toctree::
 
    huebridgeemulator.tools.colors
+   huebridgeemulator.tools.deconz
+   huebridgeemulator.tools.group
    huebridgeemulator.tools.light
    huebridgeemulator.tools.scheduler
 

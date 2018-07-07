@@ -14,6 +14,14 @@ from huebridgeemulator.web.templates import get_template, get_static
 from huebridgeemulator.http.websocket import scanDeconz
 
 
+MIMETYPES = {"json": "application/json",
+             "map": "application/json", 
+             "html": "text/html",
+             "xml": "application/xml",
+             "js": "text/javascript",
+             "css": "text/css",
+             "png": "image/png"}
+
 @hug.get('/', output=hug.output_format.html)
 @hug.get('/{filename}.{ext}', output=hug.output_format.html)
 @hug.get('/static/{filename}.{ext}', output=hug.output_format.html)
@@ -23,20 +31,23 @@ def root(request, response, filename="index", ext="html"):
     if request.path == "/":
         return hug.redirect.to('index.html')
     try:
+        response.set_header('Content-type', MIMETYPES.get(ext, "text/html"))
         return get_static(request.path)
     except FileNotFoundError:
         response.status = HTTP_404
         return
 
-
 @hug.get('/config.js',  output=hug.output_format.html)
 def configjs(request, response):
-    bridge_config = request.context['conf_obj'].bridge
-    if len(bridge_config["config"]["whitelist"]) == 0:
-        bridge_config["config"]["whitelist"]["web-ui-" + str(random.randrange(0, 99999))] = {"create date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),"last use date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),"name": "WegGui User"}
-    print('window.config = { API_KEY: "' + list(bridge_config["config"]["whitelist"])[0] + '",};')
+    registry = request.context['registry']
+    if len(registry.config["whitelist"]) == 0:
+        key = "web-ui-" + str(random.randrange(0, 99999))
+        registry.config["whitelist"][key] = {
+            "create date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            "last use date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            "name": "WegGui User"}
     response.set_header('Content-type', 'text/javascript')
-    return 'window.config = { API_KEY: "' + list(bridge_config["config"]["whitelist"])[0] + '",};'
+    return 'window.config = { API_KEY: "' + list(registry.config["whitelist"])[0] + '",};'
 
 
 @hug.get('/debug/clip.html', output=hug.output_format.html)
@@ -57,19 +68,20 @@ def save(request, response):
 authentication = hug.authentication.basic(hug.authentication.verify('Hue', 'Hue'))
 @hug.get('/hue/linkbutton', requires=authentication, output=hug.output_format.html)
 def linkbutton(request, response):
-    bridge_config = request.context['conf_obj'].bridge
+    # TODO Change user/password
+    registry = request.context['registry']
     template = get_template('webform_linkbutton.html.j2')
     if request.params.get('action') == "Activate":
-        bridge_config["config"]["linkbutton"] = False
-        bridge_config["linkbutton"]["lastlinkbuttonpushed"] = datetime.now().strftime("%s")
-        request.context['conf_obj'].save()
+        registry.config["linkbutton"] = False
+        registry.linkbutton.lastlinkbuttonpushed = datetime.now().strftime("%s")
+        registry.save()
         return template.render({"message": "You have 30 sec to connect your device"})
     elif request.params.get('action') == "Exit":
         return 'You are succesfully disconnected'
     elif request.params.get('action') == "ChangePassword":
         tmp_password = str(base64.b64encode(bytes(request.params["username"][0] + ":" + request.params["password"][0], "utf8"))).split('\'')
-        bridge_config["linkbutton"]["linkbutton_auth"] = tmp_password[1]
-        request.context['conf_obj'].save()
+        registry.linkbutton.linkbutton_auth = tmp_password[1]
+        registry.save()
         return template.render({"message": "Your credentials are succesfully change. Please logout then login again"})
     else:
         return template.render({})
