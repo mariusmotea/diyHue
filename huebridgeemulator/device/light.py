@@ -8,6 +8,7 @@ class Light(BaseResource):
     _RESOURCE_TYPE = "lights"
     _MANDATORY_ATTRS = ('address', 'state')
     _OPTIONAL_ATTRS = ()
+    _DEFAULT_DURATION = 400
 
     def send_request(self, data):
         raise NotImplementedError

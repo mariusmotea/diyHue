@@ -1,9 +1,13 @@
 import json
 import socket
+import logging
+
+from yeelight import Bulb
 
 from huebridgeemulator.device.light import Light, LightState, LightAddress
 from huebridgeemulator.tools.colors import convert_xy, convert_rgb_xy
 # Should we use yeelight python lib ??
+# https://www.yeelight.com/download/Yeelight_Inter-Operation_Spec.pdf
 
 class YeelightLight(Light):
 
@@ -12,30 +16,37 @@ class YeelightLight(Light):
                         'modelid', 'manufacturername', 'swversion')
     _OPTIONAL_ATTRS = ()
 
+    def __init__(self, raw_data, index=None):
+        Light.__init__(self, raw_data, index)
+        self._con = None
+
+    def _connect(self):
+        self._con = Bulb(self.address.ip,
+                         effect="smooth",
+                         duration=self._DEFAULT_DURATION)
+        self._con.start_music()
+        if self.logger.getEffectiveLevel() <= logging.DEBUG:
+            # Get device info
+            output = {}
+            output['model'] = self._con.model
+            output['model_specs'] = self._con.get_model_specs()
+            output['properties'] = self._con.get_properties()
+            self.logger.debug(output)
+
     def update_status(self):
         self.logger.debug(self.serialize())
-        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tcp_socket.settimeout(5)
-        tcp_socket.connect((self.address.ip, int(55443)))
-        msg = json.dumps({"id": 1, "method": "get_prop", "params":["power","bright"]}) + "\r\n"
-        tcp_socket.send(msg.encode())
-        data = tcp_socket.recv(16 * 1024)
-        # TODO use  python yeelight lib wuth music mode ti workaround the connection limit
-        light_data = json.loads(data[:-2].decode("utf8"))["result"]
-        if light_data[0] == "on": #powerstate
-            self.state.on = True
-        else:
-            self.state.on = False
-        self.state.bri = int(int(light_data[1]) * 2.54)
-        msg_mode=json.dumps({"id": 1, "method": "get_prop", "params":["color_mode"]}) + "\r\n"
-        tcp_socket.send(msg_mode.encode())
-        data = tcp_socket.recv(16 * 1024)
-        if json.loads(data[:-2].decode("utf8"))["result"][0] == "1": #rgb mode
-            msg_rgb=json.dumps({"id": 1, "method": "get_prop", "params":["rgb"]}) + "\r\n"
-            tcp_socket.send(msg_rgb.encode())
-            data = tcp_socket.recv(16 * 1024)
-            hue_data = json.loads(data[:-2].decode("utf8"))["result"]
-            hex_rgb = "%6x" % int(json.loads(data[:-2].decode("utf8"))["result"][0])
+        if self._con is None:
+            self._connect()
+        properties = self._con.get_properties()
+        self.state.bri = int(properties['bright'])
+        # {'power': 'on', 'bright': '33', 'ct': '2169', 'rgb': '5442304', 'hue': '0', 'sat': '0', 'color_mode': '1', 'flowing': '0', 'delayoff': '0', 'music_on': '0', 'name': None}
+        # {'on': True, 'bri': 83, 'xy': [0.520562, 0.310907], 'colormode': 'xy', 'reachable': True}
+        self.state.on = properties['power'] == 'on'
+        if properties['color_mode'] == '1':
+            # RGB mode
+            self.state.colormode = "xy"
+            properties['rgb']
+            hex_rgb = "%6x" % int(properties['rgb'])
             r = hex_rgb[:2]
             if r == "  ":
                 r = "00"
@@ -45,36 +56,24 @@ class YeelightLight(Light):
             b = hex_rgb[-2:]
             if b == "  ":
                 b = "00"
-#            bridge_config["lights"][light]["state"]["xy"] = convert_rgb_xy(int(r,16), int(g,16), int(b,16))
             self.state.xy = convert_rgb_xy(int(r,16), int(g,16), int(b,16))
-#            bridge_config["lights"][light]["state"]["colormode"] = "xy"
-            self.state.colormode = "xy"
-        elif json.loads(data[:-2].decode("utf8"))["result"][0] == "2": #ct mode
-            msg_ct = json.dumps({"id": 1, "method": "get_prop", "params":["ct"]}) + "\r\n"
-            tcp_socket.send(msg_ct.encode())
-            data = tcp_socket.recv(16 * 1024)
-#            bridge_config["lights"][light]["state"]["ct"] =  int(1000000 / int(json.loads(data[:-2].decode("utf8"))["result"][0]))
-            self.state.ct =  int(1000000 / int(json.loads(data[:-2].decode("utf8"))["result"][0]))
-#            bridge_config["lights"][light]["state"]["colormode"] = "ct"
+        elif properties['color_mode'] == '2':
+            # Color Temp mode
             self.state.colormode = "ct"
-        elif json.loads(data[:-2].decode("utf8"))["result"][0] == "3": #ct mode
-            msg_hsv=json.dumps({"id": 1, "method": "get_prop", "params":["hue","sat"]}) + "\r\n"
-            tcp_socket.send(msg_hsv.encode())
-            data = tcp_socket.recv(16 * 1024)
-            hue_data = json.loads(data[:-2].decode("utf8"))["result"]
-            #bridge_config["lights"][light]["state"]["hue"] = int(hue_data[0] * 182)
-            self.state.hue = int(hue_data[0] * 182)
-            #bridge_config["lights"][light]["state"]["sat"] = int(int(hue_data[1]) * 2.54)
-            self.state.sat = int(int(hue_data[1]) * 2.54)
-            #bridge_config["lights"][light]["state"]["colormode"] = "hs"
+            self.state.ct =  int(1000000 / int(properties['ct']))
+        elif properties['color_mode'] == '3':
+            # HS mode (also called HSV mode) How can we set the light in HSV mode ?
             self.state.colormode = "hs"
-        tcp_socket.close()
-        self.logger.debug(self.serialize())
-        return
+            self.state.hue = int(propreties['hue'] * 182)
+            self.state.sat = int(int(propreties['sat']) * 2.54)
+        else:
+            self.logger.error("Unknown color mode: %s", properties['color_mode'])
+            raise Exception("Unknown color mode")
 
     def send_request(self, data):
+        # TODO use python lib function instead of `send_comand` method
         payload = {}
-        transitiontime = 400
+        transitiontime = self._DEFAULT_DURATION
         if "transitiontime" in data:
             transitiontime = data["transitiontime"] * 100
         for key, value in data.items():
@@ -97,20 +96,12 @@ class YeelightLight(Light):
             elif key == "alert" and value != "none":
                 payload["start_cf"] = [ 4, 0, "1000, 2, 5500, 100, 1000, 2, 5500, 1, 1000, 2, 5500, 100, 1000, 2, 5500, 1"]
 
-        # yeelight uses different functions for each action, so it has to check for each function
-        # see page 9 http://www.yeelight.com/download/Yeelight_Inter-Operation_Spec.pdf
-        # check if hue wants to change brightness
-        for api_method, param in payload.items():
+        for api_method, params in payload.items():
             try:
-                tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                tcp_socket.settimeout(5)
-                tcp_socket.connect((self.address.ip, int(55443)))
-                msg = json.dumps({"id": 1, "method": api_method, "params": param}) + "\r\n"
-                tcp_socket.send(msg.encode())
-                tcp_socket.close()
-            except Exception as e:
-                raise e
-                print ("Unexpected error:", e)
+                self._con.send_command(api_method, params)
+            except Exception as exp:
+                self.logger.error("Unexpected error: %s", exp)
+                raise exp
 
 
 class YeelightLightAddress(LightAddress):

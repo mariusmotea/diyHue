@@ -16,6 +16,9 @@ test:
 doc-gen:
 	cd doc && make html
 
+doc-clean:
+	cd doc && make clean
+
 doc-update-refs:
 	rm -rf doc/source/refs/
 	sphinx-apidoc -M -f -e -o doc/source/refs/ huebridgeemulator/
