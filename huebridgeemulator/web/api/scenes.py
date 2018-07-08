@@ -3,6 +3,8 @@ from uuid import getnode as get_mac
 import hashlib
 import random
 import json
+from threading import Thread
+import time
 
 import requests
 import hug
@@ -13,18 +15,20 @@ from huebridgeemulator.web.templates import get_template
 from huebridgeemulator.http.websocket import scanDeconz
 from huebridgeemulator.tools.light import scanForLights
 from huebridgeemulator.scene import Scene
-from threading import Thread
-import time
-
 import huebridgeemulator.web.ui
 from huebridgeemulator.web.tools import authorized
+from huebridgeemulator.logger import http_logger
 
 
 @hug.get('/api/{uid}/scenes/{resource_id}', requires=authorized)
 def api_get_scenes_id(uid, resource_id, request, response):
-    """print specified object config."""
+    """print specified object config.
+
+    .. note:: Why we return all objects ? we ask only for one ...
+    """
     registry = request.context['registry']
     output = {}
+    # Why we return all objects ? we ask only for one ...
     for index, scene in registry.scenes.items():
         output[index] = scene.serialize()
     return output
@@ -32,6 +36,10 @@ def api_get_scenes_id(uid, resource_id, request, response):
 
 @hug.get('/api/{uid}/scenes', requires=authorized)
 def api_get_scenes(uid, request, response):
+    """Return all scenes.
+
+    .. note:: not used for now
+    """
     bridge_config = request.context['conf_obj'].bridge
     return bridge_config['scenes']
 
@@ -79,9 +87,7 @@ def api_put_scenes_id_light_id(uid, resource_id, light_id, body, request, respon
     for key, value in put_dictionary.items():
         response_dictionary.append({"success":{response_location + key: value}})
     response_dictionary.append({"success":{"/scenes/{}/name".format(resource_id): scene.name}})
-    print("FFFFFFFFFFFFFFFFFFFFF")
-    print(response_dictionary)
-#    print(json.dumps(response_dictionary, sort_keys=True, indent=4, separators=(',', ': ')))
+    http_logger.debug(response_dictionary)
     registry.save()
     return response_dictionary
 
@@ -96,25 +102,14 @@ def api_put_scenes_id_light_id(uid, resource_id, body, request, response):
             scene.lightstates[light_id] = {}
             scene.lightstates[light_id]["on"] = light.state.on
             scene.lightstates[light_id]["bri"] = light.state.bri
-#            bridge_config["scenes"][resource_id]["lightstates"][light] = {}
-#            bridge_config["scenes"][resource_id]["lightstates"][light]["on"] = bridge_config["lights"][light]["state"]["on"]
-#            bridge_config["scenes"][resource_id]["lightstates"][light]["bri"] = bridge_config["lights"][light]["state"]["bri"]
             if light.state.colormode in ("ct", "xy"):
                 scene.lightstates[light_id][light.state.colormode] = getattr(light.state, light.state.colormode)
-#            if bridge_config["lights"][light]["state"]["colormode"] in ["ct", "xy"]:
- #               bridge_config["scenes"][resource_id]["lightstates"][light][bridge_config["lights"][light]["state"]["colormode"]] = bridge_config["lights"][light]["state"][bridge_config["lights"][light]["state"]["colormode"]]
             elif light.state.colormode == "hs" and "hue" in scene.lightstates[light_id]:
                 scene.lightstates[light_id]["hue"] = light.state.hue
                 scene.lightstates[light_id]["sat"] = light.state.sat
-#            elif bridge_config["lights"][light]["state"]["colormode"] == "hs" and "hue" in bridge_config["scenes"][resource_id]["lightstates"][light]:
-#                bridge_config["scenes"][resource_id]["lightstates"][light]["hue"] = bridge_config["lights"][light]["state"]["hue"]
-#                bridge_config["scenes"][resource_id]["lightstates"][light]["sat"] = bridge_config["lights"][light]["state"]["sat"]
-#        bridge_config["scenes"][resource_id].update(put_dictionary)
     for key, value in put_dictionary.items():
         if key not in 'storelightstate':
             setattr(scene, key, value)
-#    import ipdb;ipdb.set_trace()
-    print("HHHHHHHHHHHHHHHHHHHHHHHHHHH")
 
     registry.save()
     response_dictionary = []
@@ -122,7 +117,6 @@ def api_put_scenes_id_light_id(uid, resource_id, body, request, response):
     for key, value in put_dictionary.items():
         response_dictionary.append({"success":{response_location + key: value}})
     response_dictionary.append({"success":{"/scenes/{}/storelightstate".format(resource_id): True}})
-#    response_dictionary = [{"success":{"/scenes/{}/name".format(resource_id): scene.name}}]
-    print(response_dictionary)
+    http_logger.debug(response_dictionary)
     return response_dictionary
 

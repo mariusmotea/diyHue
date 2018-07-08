@@ -3,6 +3,8 @@ from uuid import getnode as get_mac
 import hashlib
 import random
 import json
+from threading import Thread
+import time
 
 import requests
 import hug
@@ -14,28 +16,28 @@ from huebridgeemulator.http.websocket import scanDeconz
 from huebridgeemulator.tools.light import scanForLights
 from huebridgeemulator.tools.group import update_group_status
 from huebridgeemulator.device.light import LightState
-from threading import Thread
-import time
-
+from huebridgeemulator.logger import http_logger
 import huebridgeemulator.web.ui
 from huebridgeemulator.web.tools import authorized
+
+
+@hug.get('/api/{uid}/lights/new', requires=authorized)
+def api_get_lights_new(uid, request, response):
+    """return new lights and sensors only."""
+    registry = request.context['registry']
+    response = registry.get_new_lights()
+    registry.clear_new_lights()
+    http_logger.debug("Return new lights and sensors: %s", response)  
+    return response
 
 
 # TODO Add decorator to check if uid in bridge_config["config"]["whitelist"]
 @hug.get('/api/{uid}/lights/{resource_id}', requires=authorized)
 def api_get_lights_id(uid, resource_id, request, response):
     """print specified object config."""
+    # USELESS FOR NOW
     bridge_config = request.context['conf_obj'].bridge
     return request.context['conf_obj'].get_json_lights()
-
-
-@hug.get('/api/{uid}/lights/new', requires=authorized)
-def api_get_lights_new(uid, resource_type, request, response):
-    """return new lights and sensors only."""
-    bridge_config = request.context['conf_obj'].bridge
-    response = request.context['conf_obj'].get_new_lights()
-    request.context['conf_obj'].clear_new_lights()
-    return response
 
 
 @hug.get('/api/{uid}/lights', requires=authorized)
@@ -50,6 +52,7 @@ def api_get_lights(uid, request, response):
 @hug.post('/api/{uid}/lights', requires=authorized)
 def api_post_lights(uid, body, request, response):
     registry = request.context['registry']
+    import ipdb;ipdb.set_trace()
     # Improve this if
     if not bool(body):
         Thread(target=scanForLights,
@@ -60,17 +63,30 @@ def api_post_lights(uid, body, request, response):
         return [{"success": {"/" + uid: "Searching for new devices"}}]
     else: #create object
         #TODO check if this block is used 
+        raise
         post_dictionary = body
         # find the first unused id for new object
         new_object_id = registry.nextFreeId('lights')
-        import ipdb;ipdb.set_trace()
         
         generateSensorsState(bridge_config, request.context['sensors_state'])
         bridge_config['lights'][new_object_id] = post_dictionary
         request.context['conf_obj'].save()
         print(json.dumps([{"success": {"id": new_object_id}}], sort_keys=True, indent=4, separators=(',', ': ')))
         return [{"success": {"id": new_object_id}}]
+
     
+@hug.put('/api/{uid}/lights/{resource_id}', requires=authorized)
+def api_put_lights_id(uid, resource_id, body, request, response):
+    """Update light settings.
+
+    For now we can change only the lighti name.
+    """
+    registry = request.context['registry']
+    light = registry.lights[resource_id]
+    light.set_name(body['name'])
+    registry.save()
+    return [{"success": {"id": light.index}}]
+
 
 @hug.delete('/api/{uid}/lights/{resource_id}', requires=authorized)
 def api_delete_lights_id(uid, resource_id, request, response):

@@ -31,6 +31,7 @@ def discoverTPLink(registry):
             light_name = "Tplink id " + properties["deviceId"][-8:] if not properties["alias"] else properties["alias"]
             print("Add TPLink: " + light_name)
             modelid = None
+            # TODO Why do we need to save it as a Philips model ??
             if properties["model"].startswith('LB130'):
                 modelid = "LCT015"
             # elif ...

@@ -27,6 +27,11 @@ class TPLinkLight(Light):
             # Get device info
             self.logger.debug(self._con.get_sysinfo())
 
+    def set_name(self, name):
+        self.name = name
+        # The following line doesn't work for now for LB130
+        self._con.alias = name
+
     def update_status(self):
         self.logger.debug(self.serialize())
         if self._con is None:

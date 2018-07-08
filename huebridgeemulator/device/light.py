@@ -27,6 +27,9 @@ class Light(BaseResource):
         self.state.reachable = False
         self.state.on = False
 
+    def set_name(self, name):
+        raise NotImplementedError
+
 
 class LightState(BaseObject):
 

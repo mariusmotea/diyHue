@@ -20,6 +20,10 @@ class YeelightLight(Light):
         Light.__init__(self, raw_data, index)
         self._con = None
 
+    def set_name(self, name):
+        self.name = name
+        self._con.set_name(name)
+
     def _connect(self):
         self._con = Bulb(self.address.ip,
                          effect="smooth",
