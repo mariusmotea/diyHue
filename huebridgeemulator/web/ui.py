@@ -88,7 +88,7 @@ def linkbutton(request, response):
 
 @hug.get('/hue', output=hug.output_format.html)
 def linkbutton(request, response):
-    bridge_config = request.context['conf_obj'].bridge
+    registry = request.context['registry']
     template = get_template('webform_hue.html.j2')
     if request.params.get('ip'):
         url = "http://" + request.params.get('ip') + "/api/"
@@ -102,8 +102,14 @@ def linkbutton(request, response):
 #            hue_lights = json.loads(sendRequest("http://" + request.params["ip"][0] + "/api/" + response[0]["success"]["username"] + "/lights", "GET", "{}"))
             lights_found = 0
             for hue_light in hue_lights:
-                new_light_id = request.context['conf_obj'].nextFreeId("lights")
-                bridge_config["lights"][new_light_id] = hue_lights[hue_light]
+                # TODO
+                import ipdb;ipdb.set_trace()
+                hue_light['address'] =  {"username": response[0]["success"]["username"],
+                                         "light_id": hue_light,
+                                         "ip": request.params.get('ip'),
+                                         "protocol": "hue"}
+                new_light = HueLight(hue_light)
+                registry.lights["lights"][new_light.index] = new_light
                 bridge_config["lights_address"][new_light_id] = {"username": response[0]["success"]["username"], "light_id": hue_light, "ip": request.params.get('ip'), "protocol": "hue"}
                 lights_found += 1
             if lights_found == 0:

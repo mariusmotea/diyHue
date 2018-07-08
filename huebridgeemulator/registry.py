@@ -17,6 +17,7 @@ from huebridgeemulator.tools import getIpAddress
 from huebridgeemulator.device.light import LightState
 from huebridgeemulator.device.yeelight.light import YeelightLight, YeelightLightAddress
 from huebridgeemulator.device.hue.light import HueLight, HueLightAddress
+from huebridgeemulator.device.tplink.light import TPLinkLight, TPLinkLightAddress
 from huebridgeemulator.alarm_config import AlarmConfig
 from huebridgeemulator.scene import Scene
 from huebridgeemulator.sensor import Sensor, generate_daylight_sensor
@@ -138,6 +139,11 @@ class Registry(object):
                     light['state'] = LightState(light['state'])
                     light['address'] = HueLightAddress(light_address)
                     new_light = HueLight(light, index)
+                    self.lights[index] = new_light
+                elif light_address['protocol'] == 'tplink':
+                    light['state'] = LightState(light['state'])
+                    light['address'] = TPLinkLightAddress(light_address)
+                    new_light = TPLinkLight(light, index)
                     self.lights[index] = new_light
             # linkButton
             self.linkbutton = LinkButton(raw_file['linkbutton'])

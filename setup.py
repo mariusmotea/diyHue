@@ -47,6 +47,7 @@ setup(name='huebridgeemulator',
                         "netifaces==0.10.7",
                         "tzlocal==1.5.1",
                         "yeelight==0.4.2",
+                        "pyHS100==0.3.2",
                         ],
       classifiers=[
         'Programming Language :: Python :: 3.4',

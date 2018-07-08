@@ -1,3 +1,139 @@
+import math
+import colorsys
+
+from typing import Tuple
+
+
+# pylint: disable=invalid-sequence-index
+def color_hs_to_xy(iH: float, iS: float) -> Tuple[float, float]:
+    """Convert an hs color to its xy representation."""
+    return color_RGB_to_xy(*color_hs_to_RGB(iH, iS))
+
+# pylint: disable=invalid-name, invalid-sequence-index
+def color_RGB_to_xy(iR: int, iG: int, iB: int) -> Tuple[float, float]:
+    """Convert from RGB color to XY color."""
+    return color_RGB_to_xy_brightness(iR, iG, iB)[:2]
+
+# Taken from:
+# http://www.developers.meethue.com/documentation/color-conversions-rgb-xy
+# License: Code is given as is. Use at your own risk and discretion.
+# pylint: disable=invalid-name, invalid-sequence-index
+def color_RGB_to_xy_brightness(
+        iR: int, iG: int, iB: int) -> Tuple[float, float, int]:
+    """Convert from RGB color to XY color."""
+    if iR + iG + iB == 0:
+        return 0.0, 0.0, 0
+
+    R = iR / 255
+    B = iB / 255
+    G = iG / 255
+
+    # Gamma correction
+    R = pow((R + 0.055) / (1.0 + 0.055),
+            2.4) if (R > 0.04045) else (R / 12.92)
+    G = pow((G + 0.055) / (1.0 + 0.055),
+            2.4) if (G > 0.04045) else (G / 12.92)
+    B = pow((B + 0.055) / (1.0 + 0.055),
+            2.4) if (B > 0.04045) else (B / 12.92)
+
+    # Wide RGB D65 conversion formula
+    X = R * 0.664511 + G * 0.154324 + B * 0.162028
+    Y = R * 0.283881 + G * 0.668433 + B * 0.047685
+    Z = R * 0.000088 + G * 0.072310 + B * 0.986039
+
+    # Convert XYZ to xy
+    x = X / (X + Y + Z)
+    y = Y / (X + Y + Z)
+
+    # Brightness
+    Y = 1 if Y > 1 else Y
+    brightness = round(Y * 255)
+
+    return round(x, 3), round(y, 3), brightness
+
+# pylint: disable=invalid-sequence-index
+def color_hs_to_RGB(iH: float, iS: float) -> Tuple[int, int, int]:
+    """Convert an hsv color into its rgb representation."""
+    return color_hsv_to_RGB(iH, iS, 100)
+
+# pylint: disable=invalid-sequence-index
+def color_hsv_to_RGB(iH: float, iS: float, iV: float) -> Tuple[int, int, int]:
+    """Convert an hsv color into its rgb representation.
+
+    Hue is scaled 0-360
+    Sat is scaled 0-100
+    Val is scaled 0-100
+    """
+    fRGB = colorsys.hsv_to_rgb(iH/360, iS/100, iV/100)
+    return (int(fRGB[0]*255), int(fRGB[1]*255), int(fRGB[2]*255))
+
+# pylint: disable=invalid-sequence-index
+def color_xy_to_hs(vX: float, vY: float) -> Tuple[float, float]:
+    """Convert an xy color to its hs representation."""
+    h, s, _ = color_RGB_to_hsv(*color_xy_to_RGB(vX, vY))
+    return (h, s)
+
+
+def color_xy_to_RGB(vX: float, vY: float) -> Tuple[int, int, int]:
+    """Convert from XY to a normalized RGB."""
+    return color_xy_brightness_to_RGB(vX, vY, 255)
+
+
+# pylint: disable=invalid-sequence-index
+def color_RGB_to_hsv(iR: int, iG: int, iB: int) -> Tuple[float, float, float]:
+    """Convert an rgb color to its hsv representation.
+
+    Hue is scaled 0-360
+    Sat is scaled 0-100
+    Val is scaled 0-100
+    """
+    fHSV = colorsys.rgb_to_hsv(iR/255.0, iG/255.0, iB/255.0)
+    return round(fHSV[0]*360, 3), round(fHSV[1]*100, 3), round(fHSV[2]*100, 3)
+
+
+# Converted to Python from Obj-C, original source from:
+# http://www.developers.meethue.com/documentation/color-conversions-rgb-xy
+# pylint: disable=invalid-sequence-index
+def color_xy_brightness_to_RGB(vX: float, vY: float,
+                               ibrightness: int) -> Tuple[int, int, int]:
+    """Convert from XYZ to RGB."""
+    brightness = ibrightness / 255.
+    if brightness == 0:
+        return (0, 0, 0)
+
+    Y = brightness
+
+    if vY == 0:
+        vY += 0.00000000001
+
+    X = (Y / vY) * vX
+    Z = (Y / vY) * (1 - vX - vY)
+
+    # Convert to RGB using Wide RGB D65 conversion.
+    r = X * 1.656492 - Y * 0.354851 - Z * 0.255038
+    g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152
+    b = X * 0.051713 - Y * 0.121364 + Z * 1.011530
+
+    # Apply reverse gamma correction.
+    r, g, b = map(
+        lambda x: (12.92 * x) if (x <= 0.0031308) else
+        ((1.0 + 0.055) * pow(x, (1.0 / 2.4)) - 0.055),
+        [r, g, b]
+    )
+
+    # Bring all negative components to zero.
+    r, g, b = map(lambda x: max(0, x), [r, g, b])
+
+    # If one component is greater than 1, weight components by that value.
+    max_component = max(r, g, b)
+    if max_component > 1:
+        r, g, b = map(lambda x: x / max_component, [r, g, b])
+
+    ir, ig, ib = map(lambda x: int(x * 255), [r, g, b])
+
+    return (ir, ig, ib)
+
+
 def convert_rgb_xy(red,green,blue):
     red = pow((red + 0.055) / (1.0 + 0.055), 2.4) if red > 0.04045 else red / 12.92
     green = pow((green + 0.055) / (1.0 + 0.055), 2.4) if green > 0.04045 else green / 12.92
@@ -86,3 +222,14 @@ def hsv_to_rgb(h, s, v):
 
     r, g, b = int(r * 255), int(g * 255), int(b * 255)
     return r, g, b
+
+
+def color_temperature_mired_to_kelvin(mired_temperature):
+    """Convert absolute mired shift to degrees kelvin."""
+    return math.floor(1000000 / mired_temperature)
+
+
+def color_temperature_kelvin_to_mired(kelvin_temperature):
+    """Convert degrees kelvin to mired shift."""
+    return math.floor(1000000 / kelvin_temperature)
+

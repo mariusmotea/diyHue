@@ -74,13 +74,12 @@ def api_post_lights(uid, body, request, response):
 
 @hug.delete('/api/{uid}/lights/{resource_id}', requires=authorized)
 def api_delete_lights_id(uid, resource_id, request, response):
-    bridge_config = request.context['conf_obj'].bridge
-    del bridge_config['lights'][resource_id]
-    del bridge_config["lights_address"][resource_id]
-    for light in list(bridge_config["deconz"]["lights"]):
-        if bridge_config["deconz"]["lights"][light]["bridgeid"] == resource_id:
-            del bridge_config["deconz"]["lights"][light]
-    request.context['conf_obj'].save()
+    registry = request.context['registry']
+    del registry.lights[resource_id]
+    for light_id in list(registry.deconz["lights"]):
+        if registry.deconz["lights"][light_id]["bridgeid"] == resource_id:
+            del registry.deconz["lights"][light]
+    registry.save()
     return [{"success": "/lights/" + resource_id + " deleted."}]
 
 

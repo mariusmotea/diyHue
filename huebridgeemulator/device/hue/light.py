@@ -1,3 +1,7 @@
+"""
+
+.. todo:: Use python hue lib
+"""
 import json
 import requests
 
@@ -21,12 +25,9 @@ class HueLight(Light):
         self.state = LightState(ret.json()['state'])
 
     def send_request(self, data, method="put"):
-        # TODO set method default to "get"
         url = "http://" + self.address.ip + "/api/" + self.address.username + "/lights/" + self.address.light_id + "/state"
         ret = getattr(requests, method)(url, data=json.dumps(data))
         return ret.json()
-
-
 
 
 class HueLightAddress(LightAddress):
@@ -35,4 +36,3 @@ class HueLightAddress(LightAddress):
     # `light_id` example: "0x00000000033447b4"
     # `ip` example: "192.168.2.161",
     # `username` example: "0XMFqiVHCRmg26lQcYLDStizqNEyfjSd3nfGmzLv"
-

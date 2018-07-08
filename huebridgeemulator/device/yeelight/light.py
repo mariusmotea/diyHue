@@ -71,6 +71,8 @@ class YeelightLight(Light):
             raise Exception("Unknown color mode")
 
     def send_request(self, data):
+        if self._con is None:
+            self._connect()
         # TODO use python lib function instead of `send_comand` method
         payload = {}
         transitiontime = self._DEFAULT_DURATION

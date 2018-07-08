@@ -88,6 +88,14 @@ def api_post_groups(uid, body, request, response):
     registry.save()
     return [{"success": {"id": new_group.index}}]
 
+@hug.put('/api/{uid}/groups/{resource_id}', requires=authorized)
+def api_put_groups_id(uid, resource_id, body, request, response):
+    registry = request.context['registry']
+    group = registry.groups[resource_id]
+    for key, value in body.items():
+        setattr(group, key, value)
+    registry.save()
+    return [{"success": {"id": group.index}}]
 
 @hug.delete('/api/{uid}/groups/{resource_id}', requires=authorized)
 def api_delete_groups_id(uid, resource_id, request, response):
@@ -114,7 +122,7 @@ def api_put_groups_id_action(uid, resource_id, body, request, response):
                 lightsIps.append(light.address.ip)
                 processedLights.append(light_id)
                 # TODO remove this if when all light types are migrated
-                if light.address.protocol in ("yeelight", "hue"):
+                if light.address.protocol in ("yeelight", "hue", "tplink"):
                     Thread(target=light.send_request, args=[scene.lightstates[light.index]]).start()
                 else:
                     Thread(target=sendLightRequest, args=[registry, light.index, scene.lightstates[light.index]]).start()
@@ -125,7 +133,7 @@ def api_put_groups_id_action(uid, resource_id, body, request, response):
         for light_id in registry.scenes[scene.index].lights:
             if light_id not in processedLights:
                 light = registry.lights[light_id]
-                if light.address.protocol in ("yeelight", "hue"):
+                if light.address.protocol in ("yeelight", "hue", "tplink"):
                     light.send_request(scene.lightstates[light.index])
                 else:
                     sendLightRequest(registry, light.index, scene.lightstates[light.index])
@@ -163,7 +171,7 @@ def api_put_groups_id_action(uid, resource_id, body, request, response):
             if not hasattr(registry.alarm_config, "virtual_light") or light != registry.alarm_config["virtual_light"]:
                 new_state = LightState(put_dictionary)
                 light.state = new_state
-                if light.address.protocol in ("yeelight", "hue"):
+                if light.address.protocol in ("yeelight", "hue", "tplink"):
                     light.send_request(put_dictionary)
                 else:
                     sendLightRequest(registry, index, put_dictionary)
@@ -195,7 +203,7 @@ def api_put_groups_id_action(uid, resource_id, body, request, response):
             if light.address.ip not in lightsIps:
                 lightsIps.append(light.address.ip)
                 processedLights.append(light_id)
-                if light.address.protocol in ("yeelight", "hue"):
+                if light.address.protocol in ("yeelight", "hue", "tplink"):
                     Thread(target=light.send_request, args=[put_dictionary]).start()
                 else:
                     Thread(target=sendLightRequest, args=[registry, light_id, put_dictionary]).start()
@@ -204,7 +212,7 @@ def api_put_groups_id_action(uid, resource_id, body, request, response):
         for light_id  in group.lights:
             light = registry.lights[light_id]
             if light_id not in processedLights:
-                if light.address.protocol in ("yeelight", "hue"):
+                if light.address.protocol in ("yeelight", "hue", "tplink"):
                     light.send_request(put_dictionary)
                 else:
                     sendLightRequest(registry, light_id, put_dictionary)
