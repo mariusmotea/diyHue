@@ -75,9 +75,9 @@ def scheduler_processor(registry, sensors_state, run_service):
         now = datetime.now()
         if now.strftime("%M:%S") == "00:10":
             # auto save configuration every hour
-            conf_obj.save()
-            Thread(target=daylight_sensor, args=[conf_obj, sensors_state]).start()
+            registry.save()
+            Thread(target=daylight_sensor, args=[registry, sensors_state]).start()
             if now.hour == "23" and now.weekday == 6:
                 # backup config every Sunday at 23:00:10
-                conf_obj.backup()
+                registry.backup()
         time.sleep(1)

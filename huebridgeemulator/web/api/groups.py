@@ -12,6 +12,8 @@ from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.web.templates import get_template
 from huebridgeemulator.http.websocket import scanDeconz
 from huebridgeemulator.tools.light import scanForLights, sendLightRequest
+from huebridgeemulator.tools.group import update_group_status
+from huebridgeemulator.device.light import LightState
 from threading import Thread
 import time
 
@@ -38,8 +40,9 @@ def api_get_groups_new(uid, request, response):
 
 @hug.get('/api/{uid}/groups')
 def api_get_groups(uid, request, response):
+    registry = request.context['registry']
     output = {}
-    for index, group in request.context['registry'].groups.items():
+    for index, group in registry.groups.items():
         output[index] = group.serialize()
     return output
 
@@ -88,41 +91,47 @@ def api_post_groups(uid, body, request, response):
 
 @hug.delete('/api/{uid}/groups/{resource_id}', requires=authorized)
 def api_delete_groups_id(uid, resource_id, request, response):
-    bridge_config = request.context['conf_obj'].bridge
-    del bridge_config['groups'][resource_id]
-    request.context['conf_obj'].save()
+    registry = request.context['registry']
+    del registry.groups[resource_id]
+    registry.save()
     return [{"success": "/groups/" + resource_id + " deleted."}]
 
 #/api/a7161538be80d40b3de98dece6e91f90/groups/1/action
 @hug.put('/api/{uid}/groups/{resource_id}/action', requires=authorized)
 def api_put_groups_id_action(uid, resource_id, body, request, response):
-    bridge_config = request.context['conf_obj'].bridge
+    registry = request.context['registry']
     put_dictionary = body
     if "scene" in put_dictionary: #scene applied to group
+        scene = registry.scenes[put_dictionary["scene"]]
         #send all unique ip's in thread mode for speed
         lightsIps = []
         processedLights = []
-        for light in bridge_config["scenes"][put_dictionary["scene"]]["lights"]:
-            bridge_config["lights"][light]["state"].update(bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
-            if bridge_config["lights_address"][light]["ip"] not in lightsIps:
-                lightsIps.append(bridge_config["lights_address"][light]["ip"])
-                processedLights.append(light)
-                current_light = request.context['conf_obj'].get_resource("lights", light)
-                if current_light.address.protocol in ("yeelight", "hue"):
-                    Thread(target=current_light.send_request, args=[bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]]).start()
+        for light_id in registry.scenes[scene.index].lights:
+            light = registry.lights[light_id]
+            light.state = LightState(scene.lightstates[light.index])
+#            registry.lights[light]["state"].update(bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
+            if light.address.ip not in lightsIps:
+                lightsIps.append(light.address.ip)
+                processedLights.append(light_id)
+                # TODO remove this if when all light types are migrated
+                if light.address.protocol in ("yeelight", "hue"):
+                    Thread(target=light.send_request, args=[scene.lightstates[light.index]]).start()
                 else:
-                    Thread(target=sendLightRequest, args=[request.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]]).start()
+                    Thread(target=sendLightRequest, args=[registry, light.index, scene.lightstates[light.index]]).start()
+
+        # TODO Remove this sleep and create a ThreadPool then wait for the completion of all thread
         time.sleep(0.2) #give some time for the device to process the threaded request
-        #now send the rest of the requests in non threaded mode
-        for light in bridge_config["scenes"][put_dictionary["scene"]]["lights"]:
-            if light not in processedLights:
-                current_light = request.context['conf_obj'].get_resource("lights", light)
-                if current_light.address.protocol in ("yeelight", "hue"):
-                    current_light.send_request(bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
+        # Now send the rest of the requests in non threaded mode
+        for light_id in registry.scenes[scene.index].lights:
+            if light_id not in processedLights:
+                light = registry.lights[light_id]
+                if light.address.protocol in ("yeelight", "hue"):
+                    light.send_request(scene.lightstates[light.index])
                 else:
-                    sendLightRequest(request.context['conf_obj'], light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
-            updateGroupStats(request.context['conf_obj'], light)
+                    sendLightRequest(registry, light.index, scene.lightstates[light.index])
+            update_group_status(registry, light)
     elif "bri_inc" in put_dictionary:
+        # TODO comments
         bridge_config["groups"][resource_id]["action"]["bri"] += int(put_dictionary["bri_inc"])
         if bridge_config["groups"][resource_id]["action"]["bri"] > 254:
             bridge_config["groups"][resource_id]["action"]["bri"] = 254
@@ -133,8 +142,9 @@ def api_put_groups_id_action(uid, resource_id, body, request, response):
         put_dictionary.update({"bri": bridge_config["groups"][resource_id]["action"]["bri"]})
         for light in bridge_config["groups"][resource_id]["lights"]:
             bridge_config["lights"][light]["state"].update(put_dictionary)
-            sendLightRequest(request.context['conf_obj'], light, put_dictionary)
+            sendLightRequest(registry, light, put_dictionary)
     elif "ct_inc" in put_dictionary:
+        # TODO comments
         bridge_config["groups"][resource_id]["action"]["ct"] += int(put_dictionary["ct_inc"])
         if bridge_config["groups"][resource_id]["action"]["ct"] > 500:
             bridge_config["groups"][resource_id]["action"]["ct"] = 500
@@ -145,48 +155,57 @@ def api_put_groups_id_action(uid, resource_id, body, request, response):
         put_dictionary.update({"ct": bridge_config["groups"][resource_id]["action"]["ct"]})
         for light in bridge_config["groups"][resource_id]["lights"]:
             bridge_config["lights"][light]["state"].update(put_dictionary)
-            sendLightRequest(request.context['conf_obj'], light, put_dictionary)
+            sendLightRequest(registry, light, put_dictionary)
     elif "scene_inc" in put_dictionary:
         switchScene(resource_id, put_dictionary["scene_inc"])
     elif resource_id == "0": #if group is 0 the scene applied to all lights
-        for light in bridge_config["lights"].keys():
-            if "virtual_light" not in bridge_config["alarm_config"] or light != bridge_config["alarm_config"]["virtual_light"]:
-                bridge_config["lights"][light]["state"].update(put_dictionary)
-                current_light = request.context['conf_obj'].get_resource("lights", light)
-                if current_light.address.protocol in ("yeelight", "hue"):
-                    current_light.send_request(put_dictionary)
+        for index, light in registry.lights.items():
+            if not hasattr(registry.alarm_config, "virtual_light") or light != registry.alarm_config["virtual_light"]:
+                new_state = LightState(put_dictionary)
+                light.state = new_state
+                if light.address.protocol in ("yeelight", "hue"):
+                    light.send_request(put_dictionary)
                 else:
-                    sendLightRequest(request.context['conf_obj'], light, put_dictionary)
-        for group in bridge_config["groups"].keys():
-            bridge_config["groups"][group][url_pices[5]].update(put_dictionary)
+                    sendLightRequest(registry, index, put_dictionary)
+        for index, group in registry.groups.items():
+            # Update action
+            for key, value in put_dictionary.items():
+                setattr(group.action, key, value)
             if "on" in put_dictionary:
-                bridge_config["groups"][group]["state"]["any_on"] = put_dictionary["on"]
-                bridge_config["groups"][group]["state"]["all_on"] = put_dictionary["on"]
+                group.state.any_on = put_dictionary["on"]
+                group.state.all_on = put_dictionary["on"]
     else: # the state is applied to particular group (resource_id)
+        group = registry.groups[resource_id]
         if "on" in put_dictionary:
-            bridge_config["groups"][resource_id]["state"]["any_on"] = put_dictionary["on"]
-            bridge_config["groups"][resource_id]["state"]["all_on"] = put_dictionary["on"]
-        bridge_config["groups"][resource_id]["action"].update(put_dictionary)
+            group.state.any_on = put_dictionary["on"]
+            group.state.all_on = put_dictionary["on"]
+#            bridge_config["groups"][resource_id]["state"]["any_on"] = put_dictionary["on"]
+#            bridge_config["groups"][resource_id]["state"]["all_on"] = put_dictionary["on"]
+        # Update action
+        for key, value in put_dictionary.items():
+            setattr(group.action, key, value)
+        #bridge_config["groups"][resource_id]["action"].update(put_dictionary)
         #send all unique ip's in thread mode for speed
         lightsIps = []
         processedLights = []
-        for light in bridge_config["groups"][resource_id]["lights"]:
-            bridge_config["lights"][light]["state"].update(put_dictionary)
-            if bridge_config["lights_address"][light]["ip"] not in lightsIps:
-                lightsIps.append(bridge_config["lights_address"][light]["ip"])
-                processedLights.append(light)
-                current_light = request.context['conf_obj'].get_resource("lights", light)
-                if current_light.address.protocol in ("yeelight", "hue"):
-                    Thread(target=current_light.send_request, args=[put_dictionary]).start()
+        for light_id in group.lights:
+            light = registry.lights[light_id]
+            new_state = LightState(put_dictionary)
+            light.state = new_state
+            if light.address.ip not in lightsIps:
+                lightsIps.append(light.address.ip)
+                processedLights.append(light_id)
+                if light.address.protocol in ("yeelight", "hue"):
+                    Thread(target=light.send_request, args=[put_dictionary]).start()
                 else:
-                    Thread(target=sendLightRequest, args=[request.context['conf_obj'], light, put_dictionary]).start()
+                    Thread(target=sendLightRequest, args=[registry, light_id, put_dictionary]).start()
         time.sleep(0.2) #give some time for the device to process the threaded request
         #now send the rest of the requests in non threaded mode
-        for light in bridge_config["groups"][resource_id]["lights"]:
-            if light not in processedLights:
-                current_light = request.context['conf_obj'].get_resource("lights", light)
-                if current_light.address.protocol in ("yeelight", "hue"):
-                    current_light.send_request(put_dictionary)
+        for light_id  in group.lights:
+            light = registry.lights[light_id]
+            if light_id not in processedLights:
+                if light.address.protocol in ("yeelight", "hue"):
+                    light.send_request(put_dictionary)
                 else:
-                    sendLightRequest(request.context['conf_obj'], light, put_dictionary)
-    request.context['conf_obj'].save()
+                    sendLightRequest(registry, light_id, put_dictionary)
+    registry.save()

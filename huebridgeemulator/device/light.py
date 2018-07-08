@@ -29,8 +29,8 @@ class Light(BaseResource):
 
 class LightState(BaseObject):
 
-    _MANDATORY_ATTRS = ('alert', 'bri', 'colormode', 'ct', 'on', 'reachable')
-    _OPTIONAL_ATTRS = ('effect', 'hue', 'sat', 'xy', 'mode')
+    _MANDATORY_ATTRS = ('on',)
+    _OPTIONAL_ATTRS = ('bri', 'effect', 'hue', 'sat', 'xy', 'mode', 'alert', 'colormode', 'ct', 'reachable')
 
 
 class LightAddress(BaseObject):
