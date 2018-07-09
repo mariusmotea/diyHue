@@ -1,17 +1,8 @@
-from datetime import datetime
+"""Module starting http server."""
 from uuid import getnode as get_mac
-import hashlib
-import random
-import json
 
-import requests
 import hug
-from jinja2 import FileSystemLoader, Environment
 
-
-from huebridgeemulator.tools import generateSensorsState
-from huebridgeemulator.web.templates import get_template
-from huebridgeemulator.http.websocket import scanDeconz
 from huebridgeemulator.web import ui
 from huebridgeemulator.web.api import scenes
 from huebridgeemulator.web.api import common
@@ -21,18 +12,26 @@ from huebridgeemulator.web.api import lights
 from huebridgeemulator.web.api import sensors
 from huebridgeemulator.logger import http_logger
 
-# TODO Add pylint disable...
-import huebridgeemulator.web.hack
+# We need this line for the error serializer hack...
+import huebridgeemulator.web.hack  # pylint: disable=W0611
 
 
 @hug.extend_api()
 def with_other_apis():
+    """Load all API views."""
     return [ui, scenes, common, config, groups, lights, sensors]
 
 
 def start(registry, sensors_state):
+    """Start http server.
+
+    .. todo:: check if some request.context elements are useless
+
+    .. todo:: remove sensors_state dict and put it in the registry
+    """
     @hug.request_middleware()
-    def create_context(request, response):
+    def create_context(request, response):  # pylint: disable=W0613,W0612
+        """Add context element to the request object."""
         request.context['conf_obj'] = registry
         request.context['registry'] = registry
         request.context['mac'] = '%012x' % get_mac()

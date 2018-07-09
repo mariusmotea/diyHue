@@ -86,7 +86,7 @@ def addHueMotionSensor(uniqueid):
     return str(int(new_sensor_id) + 1)
 
 
-def addHueSwitch(uniqueid, sensorsType):
+def add_hue_switch(uniqueid, sensorsType):
     new_sensor_id = nextFreeId("sensors")
     if uniqueid == "":
         uniqueid = "00:00:00:00:00:40:" + new_sensor_id + ":83-f2"
