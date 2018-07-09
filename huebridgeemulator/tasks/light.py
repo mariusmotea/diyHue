@@ -24,7 +24,9 @@ def sync_with_lights(registry):
         sync_with_lights_logger.debug("Sync with lights")
         for light in registry.lights.values():
             try:
-                if light.address.protocol == "native":
+                if light.address.protocol in ("yeelight", "tplink", "hue"):
+                    light.update_status()
+                elif light.address.protocol == "native":
                     url = "http://{}/get?light={}".format(
                         light.address.ip,
                         str(light.address.light_nr))
@@ -32,8 +34,6 @@ def sync_with_lights(registry):
                     # light.update_status()
                     light_data = json.loads(sendRequest(url, "GET", "{}"))
                     bridge_config["lights"][light]["state"].update(light_data)
-                elif light.address.protocol in ("yeelight", "tplink", "hue"):
-                    light.update_status()
                 elif light.address.protocol == "ikea_tradfri":
                     # TODO
                     command_line = ('./coap-client-linux -m get -u "{}" -k "{}" '
