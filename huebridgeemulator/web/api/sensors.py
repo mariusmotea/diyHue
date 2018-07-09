@@ -62,7 +62,7 @@ def api_post_sensors(uid, body, request, response):
     print("create objectcreate objectcreate objectcreate objectcreate object")
     print(request.path)
     # find the first unused id for new object
-    new_object_id = request.context['conf_obj'].nextFreeId('sensors')
+    new_object_id = request.context['conf_obj'].next_free_id('sensors')
     if "state" not in post_dictionary:
         post_dictionary["state"] = {}
     if post_dictionary["modelid"] == "PHWA01":

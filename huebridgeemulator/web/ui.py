@@ -12,6 +12,7 @@ from jinja2 import FileSystemLoader, Environment
 from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.web.templates import get_template, get_static
 from huebridgeemulator.http.websocket import scanDeconz
+from huebridgeemulator.device.tradfri import add_tradfri_scene_remote, add_tradfri_ct_remote
 
 
 MIMETYPES = {"json": "application/json",
@@ -164,11 +165,11 @@ def deconz(request, response):
                 if not key.startswith("mode_"):
                     if bridge_config["sensors"][key]["modelid"] == "TRADFRI remote control":
                         if request.params["mode_" + key][0]  == "CT":
-                            addTradfriCtRemote(key, request.params[key][0])
+                            add_tradfri_ct_remote(key, request.params[key][0])
                         elif request.params["mode_" + key][0]  == "SCENE":
-                            addTradfriSceneRemote(key, request.params[key][0])
+                            add_tradfri_scene_remote(key, request.params[key][0])
                     elif bridge_config["sensors"][key]["modelid"] == "TRADFRI wireless dimmer":
-                        addTradfriDimmer(key, request.params[key][0])
+                        add_tradfri_dimmer(key, request.params[key][0])
                     #store room id in deconz sensors
                     for sensor in bridge_config["deconz"]["sensors"].keys():
                         if bridge_config["deconz"]["sensors"][sensor]["bridgeid"] == key:

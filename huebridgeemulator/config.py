@@ -56,6 +56,7 @@ def loadConfig(filename):  #load and configure alarm virtual light
 
     return bridge_config
 
+
 def saveConfig(filename, bridge_config):
     with open(filename, 'w') as fp:
         json.dump(bridge_config, fp, sort_keys=True, indent=4, separators=(',', ': '))

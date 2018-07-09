@@ -1,3 +1,4 @@
+"""Base functions for Yeelight lights."""
 import socket
 import random
 import json
@@ -10,11 +11,12 @@ from huebridgeemulator.device.light import LightState
 from huebridgeemulator.logger import light_scan_logger
 
 
-def discoverYeelight(registry):
+def discover_yeelight(registry):
+    """Discover Yeelight lights on your local network."""
     raw_lights = discover_bulbs()
     for raw_light in raw_lights:
         device_exist = False
-        for index, light in registry.lights.items():
+        for light in registry.lights.values():
             rawlight_id = raw_light['capabilities']['id']
             if light.address.protocol == "yeelight" and light.address.id == rawlight_id:
                 device_exist = True
@@ -23,11 +25,13 @@ def discoverYeelight(registry):
                                         rawlight_id)
                 break
 
-        if (not device_exist):
+        if not device_exist:
             properties = Bulb(raw_light["ip"]).get_properties()
             properties['id'] = raw_light['capabilities']['id']
-            light_name = "YeeLight id " + properties["id"][-8:] if properties["name"] == "" else properties["name"]
             light_scan_logger.debug("Add YeeLight: %s", properties["id"])
+            light_name = properties["name"]
+            if properties["name"] == "":
+                light_name = "YeeLight id " + properties["id"][-8:]
             modelid = "LWB010"
             # TODO Why do we need to save it as a Philips model ??
             if properties["rgb"]:

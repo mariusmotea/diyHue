@@ -9,9 +9,9 @@ import socket
 from subprocess import check_output
 
 from huebridgeemulator.tools.deconz import scanDeconz
-from huebridgeemulator.device.tradfri import scanTradfri
-from huebridgeemulator.device.yeelight import discoverYeelight
-from huebridgeemulator.device.tplink import discoverTPLink
+from huebridgeemulator.device.tradfri import discover_tradfri
+from huebridgeemulator.device.yeelight import discover_yeelight
+from huebridgeemulator.device.tplink import discover_tplink
 from huebridgeemulator.tools.colors import convert_rgb_xy, convert_xy
 from huebridgeemulator.http.client import sendRequest
 
@@ -61,6 +61,19 @@ LIGHT_TYPES = \
             "swversion": "V1.04.12"}
 }
 
+def update_all_lights(registry):
+    """Apply last state on startup to all bulbs,
+    usefull if there was a power outage.
+    """
+    for light in registy.lights.values():
+        payload = {}
+        payload["on"] = light.state.on
+        if payload["on"] and hasattr(light.state, 'bri'):
+            payload["bri"] = light.state.bri
+        light.send_request(payload)
+        sleep(0.5)
+        light.logger.debug("update status for light %s", light)
+
 
 def getIpAddress():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -69,8 +82,8 @@ def getIpAddress():
 
 
 def scanForLights(conf_obj, new_lights): #scan for ESP8266 lights and strips
-    Thread(target=discoverYeelight, args=[conf_obj]).start()
-    Thread(target=discoverTPLink, args=[conf_obj]).start()
+    Thread(target=discover_yeelight, args=[conf_obj]).start()
+    Thread(target=discover_tplink, args=[conf_obj]).start()
     #return all host that listen on port 80
     device_ips = check_output("nmap  " + getIpAddress() + "/24 -p80 --open -n | grep report | cut -d ' ' -f5", shell=True).decode('utf-8').split("\n")
     pprint(device_ips)
@@ -103,8 +116,7 @@ def scanForLights(conf_obj, new_lights): #scan for ESP8266 lights and strips
 #            raise exp
             print("ip " + ip + " is unknow device")
     scanDeconz(conf_obj)
-    # TODO activatethis
-    #scanTradfri()
+    discover_tradfri(registry)
     conf_obj.save()
 
 

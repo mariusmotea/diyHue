@@ -1,3 +1,4 @@
+"""Base functions for TPLink lights."""
 import socket
 import random
 import json
@@ -7,10 +8,11 @@ from pyHS100 import Discover, SmartBulb, SmartDeviceException
 from huebridgeemulator.const import LIGHT_TYPES
 from huebridgeemulator.device.tplink.light import TPLinkLight, TPLinkLightAddress
 from huebridgeemulator.device.light import LightState
+from huebridgeemulator.logger import light_scan_logger
 
 
-
-def discoverTPLink(registry):
+def discover_tplink(registry):
+    """Discover TPLink lights on your local network."""
     for light_ip in Discover.discover():
         new_light = SmartBulb(light_ip)
         try:
@@ -20,16 +22,18 @@ def discoverTPLink(registry):
         properties = new_light.get_sysinfo()
         device_exist = False
         # Check if the device exists
-        for index, light in registry.lights.items():
+        for light in registry.lights.values():
             if light.address.protocol == "tplink" and light.address.id == properties["deviceId"]:
                 device_exist = True
                 light.address.ip = light_ip
                 # TODO LOGGER
-                print("light id " + light_ip + " already exist, updating ip...")
+                light_scan_logger.debug("light id %s already exist, updating ip...", light_ip)
                 break
-        if (not device_exist):
-            light_name = "Tplink id " + properties["deviceId"][-8:] if not properties["alias"] else properties["alias"]
-            print("Add TPLink: " + light_name)
+        if not device_exist:
+            light_name = "Tplink id " + properties["deviceId"][-8:]
+            if properties["alias"]:
+                light_name = properties["alias"]
+            light_scan_logger.debug("Add TPLink: %s", light_name)
             modelid = None
             # TODO Why do we need to save it as a Philips model ??
             if properties["model"].startswith('LB130'):
@@ -37,7 +41,7 @@ def discoverTPLink(registry):
             # elif ...
             # Add support for other tplink bulb
             if modelid is None:
-                raise Exception("TPLink bulb %s not supported yet".format(properties["model"]))
+                raise Exception("TPLink bulb {} not supported yet".format(properties["model"]))
             address = {"ip": light_ip, "id": properties["deviceId"]}
             raw_light = {"type": LIGHT_TYPES[modelid]["type"],
                          "name": light_name,

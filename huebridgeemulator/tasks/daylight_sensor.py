@@ -16,7 +16,7 @@ def daylight_sensor(registry, sensors_state):
     .. todo:: Add description and some comments
     """
     if registry.sensors["1"].modelid != "PHDL00" or \
-    not registry.sensors["1"].config["configured"]:
+            not registry.sensors["1"].config["configured"]:
         return
 
     astral = Astral()
@@ -30,22 +30,22 @@ def daylight_sensor(registry, sensors_state):
     delta_sunset = sun['sunset'].replace(tzinfo=None) - datetime.now()
     delta_sunrise = sun['sunrise'].replace(tzinfo=None) - datetime.now()
     delta_sunset_offset = delta_sunset.total_seconds() + \
-                          registry.sensors["1"].config["sunsetoffset"] * 60
+        registry.sensors["1"].config["sunsetoffset"] * 60
     delta_sunrise_offset = delta_sunrise.total_seconds() + \
-                           registry.sensors["1"].config["sunriseoffset"] * 60
+        registry.sensors["1"].config["sunriseoffset"] * 60
     daylight_logger.debug("delta_sunset_offset: " + str(delta_sunset_offset))
     daylight_logger.debug("delta_sunrise_offset: " + str(delta_sunrise_offset))
     if delta_sunset_offset > 0 and delta_sunset_offset < 3600:
         daylight_logger.debug("will start the sleep for sunset")
         time.sleep(delta_sunset_offset)
         current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        registry.sensors["1"].state = {"daylight":False, "lastupdated": current_time}
+        registry.sensors["1"].state = {"daylight": False, "lastupdated": current_time}
         sensors_state["1"]["state"]["daylight"] = current_time
         rulesProcessor("1", current_time)
     if delta_sunrise_offset > 0 and delta_sunrise_offset < 3600:
         daylight_logger.debug("will start the sleep for sunrise")
         time.sleep(delta_sunset_offset)
         current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        registry.sensors["1"].state = {"daylight":True, "lastupdated": current_time}
+        registry.sensors["1"].state = {"daylight": True, "lastupdated": current_time}
         sensors_state["1"]["state"]["daylight"] = current_time
         rulesProcessor("1", current_time)

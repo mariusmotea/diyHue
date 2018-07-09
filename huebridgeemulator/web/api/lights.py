@@ -66,7 +66,7 @@ def api_post_lights(uid, body, request, response):
         raise
         post_dictionary = body
         # find the first unused id for new object
-        new_object_id = registry.nextFreeId('lights')
+        new_object_id = registry.next_free_id('lights')
         
         generateSensorsState(bridge_config, request.context['sensors_state'])
         bridge_config['lights'][new_object_id] = post_dictionary
