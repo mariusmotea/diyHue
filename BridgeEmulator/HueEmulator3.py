@@ -15,6 +15,11 @@ from uuid import getnode as get_mac
 from urllib.parse import urlparse, parse_qs
 from functions import *
 
+import os
+import signal
+import subprocess
+import atexit
+
 update_lights_on_startup = False # if set to true all lights will be updated with last know state on startup.
 
 mac = '%012x' % get_mac()
@@ -24,6 +29,58 @@ run_service = True
 bridge_config = defaultdict(lambda:defaultdict(str))
 new_lights = {}
 sensors_state = {}
+
+psk_list = ""
+dtls_server = subprocess.Popen(["/opt/hue-emulator/./ssl_server2_diyhue server_port=2100 dtls=1"], stdout=subprocess.PIPE,shell=True, preexec_fn=os.setsid) 
+
+def gen_psk_list():
+    global psk_list
+    for username in bridge_config["config"]["whitelist"]:
+        psk_list += username + ","
+        psk_list += "321c0c2ebfa7361e55491095b2f5f9db,"
+    psk_list = psk_list[:-1]
+
+def restartDtlsServer():
+    global psk_list
+    global dtls_server
+    os.killpg(os.getpgid(dtls_server.pid), signal.SIGTERM)
+    dtls_server = subprocess.Popen(["/opt/hue-emulator/./ssl_server2_diyhue server_port=2100 dtls=1 psk_list=" + psk_list], stdout=subprocess.PIPE,shell=True, preexec_fn=os.setsid) 
+
+def cleanup():
+    global dtls_server
+    os.killpg(os.getpgid(dtls_server.pid), signal.SIGTERM)
+
+atexit.register(cleanup)
+
+def entertainmentService():
+    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    serverSocket.bind(('127.0.0.1', 2101))
+    while True:
+        data = serverSocket.recvfrom(200)[0]
+        print(len(data))
+        if data[:9].decode('utf-8') == "HueStream":
+            if data[14] == 0: #rgb colorspace
+                i = 16
+                while i < len(data):
+                    if data[i] == 0: #Type of device 0x00 = Light
+                        lightId = data[i+1] * 256 + data[i+2]
+                        if lightId != 0:
+                            print("light: " + str(lightId))
+                            r = int((data[i+3] * 256 + data[i+4]) / 256)
+                            g = int((data[i+5] * 256 + data[i+6]) / 256)
+                            b = int((data[i+7] * 256 + data[i+7]) / 256)
+                            print("send to light following data: " + str(r) + "," + str(g) + "," + str(b))
+                            s = str(r) + str(g) + str(b)
+                            #sendLightRequest(lightId, {"r": r,"g": g, "b": b})
+                            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+                            sock.sendto(bytes([r]) + bytes([g]) + bytes([b]), (bridge_config["lights_address"][str(lightId)]["ip"], 2100))
+                            if r == 0 and  r == 0 and  r == 0:
+                                bridge_config["lights"][str(lightId)]["state"]["on"] = False
+                            else:
+                                bridge_config["lights"][str(lightId)]["state"]["on"] = True
+                                bridge_config["lights"][str(lightId)]["state"]["xy"] = convert_rgb_xy(r, g, b)
+                            updateGroupStats(lightId)
+                        i = i + 9
 
 light_types = {"LCT015": {"state": {"on": False, "bri": 200, "hue": 0, "sat": 0, "xy": [0.0, 0.0], "ct": 461, "alert": "none", "effect": "none", "colormode": "ct", "reachable": True}, "type": "Extended color light", "swversion": "1.29.0_r21169"}, "LST001": {"state": {"on": False, "bri": 200, "hue": 0, "sat": 0, "xy": [0.0, 0.0], "ct": 461, "alert": "none", "effect": "none", "colormode": "ct", "reachable": True}, "type": "Color light", "swversion": "66010400"}, "LWB010": {"state": {"on": False, "bri": 254,"alert": "none", "reachable": True}, "type": "Dimmable light", "swversion": "1.15.0_r18729"}, "LTW001": {"state": {"on": False, "colormode": "ct", "alert": "none", "reachable": True, "bri": 254, "ct": 230}, "type": "Color temperature light", "swversion": "5.50.1.19085"}, "Plug 01": {"state": {"on": False, "alert": "none", "reachable": True}, "type": "On/Off plug-in unit", "swversion": "V1.04.12"}}
 
@@ -100,6 +157,8 @@ try:
     with open('/opt/hue-emulator/config.json', 'r') as fp:
         bridge_config = json.load(fp)
         print("Config loaded")
+        gen_psk_list()
+        restartDtlsServer()
 except Exception:
     print("CRITICAL! Config file was not loaded")
     sys.exit(1)
@@ -881,7 +940,9 @@ def scanDeconz():
                 new_sensor_id = nextFreeId("sensors")
                 if deconz_sensors[sensor]["modelid"] in ["TRADFRI remote control", "TRADFRI wireless dimmer"]:
                     print("register new " + deconz_sensors[sensor]["modelid"])
-                    bridge_config["sensors"][new_sensor_id] = {"config": deconz_sensors[sensor]["config"], "manufacturername": deconz_sensors[sensor]["manufacturername"], "modelid": deconz_sensors[sensor]["modelid"], "name": deconz_sensors[sensor]["name"], "state": deconz_sensors[sensor]["state"], "swversion": deconz_sensors[sensor]["swversion"], "type": deconz_sensors[sensor]["type"], "uniqueid": deconz_sensors[sensor]["uniqueid"]}
+                    bridge_config["sensors"][new_sensor_id] = {"config": deconz_sensors[sensor]["config"], "manufacturername": deconz_sensors[sensor]["manufacturername"], "modelid": deconz_sensors[sensor]["modelid"], "name": deconz_sensors[sensor]["name"], "state": deconz_sensors[sensor]["state"], "type": deconz_sensors[sensor]["type"], "uniqueid": deconz_sensors[sensor]["uniqueid"]}
+                    if "swversion" in  deconz_sensors[sensor]:
+                        bridge_config["sensors"][new_sensor_id]["swversion"] = deconz_sensors[sensor]["swversion"]
                     bridge_config["deconz"]["sensors"][sensor] = {"bridgeid": new_sensor_id, "modelid": deconz_sensors[sensor]["modelid"]}
                 elif deconz_sensors[sensor]["modelid"] == "TRADFRI motion sensor":
                     print("register TRADFRI motion sensor as Philips Motion Sensor")
@@ -1231,7 +1292,7 @@ class S(BaseHTTPRequestHandler):
                     sleep(7) #give no more than 5 seconds for light scanning (otherwise will face app disconnection timeout)
                     self.wfile.write(bytes(json.dumps([{"success": {"/" + url_pices[3]: "Searching for new devices"}}]), "utf8"))
                 elif url_pices[3] == "":
-                    self.wfile.write(bytes(json.dumps([{"success": {"clientkey": "E3B550C65F78022EFD9E52E28378583"}}]), "utf8"))
+                    self.wfile.write(bytes(json.dumps([{"success": {"clientkey": "321c0c2ebfa7361e55491095b2f5f9db"}}]), "utf8"))
                 else: #create object
                     # find the first unused id for new object
                     new_object_id = nextFreeId(url_pices[3])
@@ -1265,27 +1326,19 @@ class S(BaseHTTPRequestHandler):
             else:
                 self.wfile.write(bytes(json.dumps([{"error": {"type": 1, "address": self.path, "description": "unauthorized user" }}],sort_keys=True, indent=4, separators=(',', ': ')), "utf8"))
                 print(json.dumps([{"error": {"type": 1, "address": self.path, "description": "unauthorized user" }}],sort_keys=True, indent=4, separators=(',', ': ')))
-        elif self.path.startswith("/api") and "devicetype" in post_dictionary and bridge_config["config"]["linkbutton"]: #this must be a new device registration
-                #create new user hash
+        elif self.path.startswith("/api") and "devicetype" in post_dictionary: #new registration by linkbutton
+            if int(bridge_config["linkbutton"]["lastlinkbuttonpushed"])+30 >= int(datetime.now().strftime("%s")) or bridge_config["config"]["linkbutton"]:
                 username = hashlib.new('ripemd160', post_dictionary["devicetype"][0].encode('utf-8')).hexdigest()[:32]
                 bridge_config["config"]["whitelist"][username] = {"last use date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"create date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"name": post_dictionary["devicetype"]}
                 response = [{"success": {"username": username}}]
                 if "generateclientkey" in post_dictionary and post_dictionary["generateclientkey"]:
-                    response[0]["success"]["clientkey"] = "E3B550C65F78022EFD9E52E28378583"
+                    response[0]["success"]["clientkey"] = "321c0c2ebfa7361e55491095b2f5f9db"
                 self.wfile.write(bytes(json.dumps(response), "utf8"))
                 print(json.dumps(response, sort_keys=True, indent=4, separators=(',', ': ')))
-        elif self.path.startswith("/api") and "devicetype" in post_dictionary and not bridge_config["config"]["linkbutton"]: #new registration by linkbutton
-                if int(bridge_config["linkbutton"]["lastlinkbuttonpushed"])+30 >= int(datetime.now().strftime("%s")):
-                    username = hashlib.new('ripemd160', post_dictionary["devicetype"][0].encode('utf-8')).hexdigest()[:32]
-                    bridge_config["config"]["whitelist"][username] = {"last use date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"create date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),"name": post_dictionary["devicetype"]}
-                    response = [{"success": {"username": username}}]
-                    if "generateclientkey" in post_dictionary and post_dictionary["generateclientkey"]:
-                        response[0]["success"]["clientkey"] = "E3B550C65F78022EFD9E52E28378583"
-                    self.wfile.write(bytes(json.dumps(response), "utf8"))
-                    print(json.dumps(response, sort_keys=True, indent=4, separators=(',', ': ')))
-                else:
-                    self.wfile.write(bytes(json.dumps([{"error": {"type": 101, "address": self.path, "description": "link button not pressed" }}],sort_keys=True, indent=4, separators=(',', ': ')), "utf8"))
-        self.end_headers()
+                gen_psk_list()
+                restartDtlsServer()
+            else:
+                self.wfile.write(bytes(json.dumps([{"error": {"type": 101, "address": self.path, "description": "link button not pressed" }}],sort_keys=True, indent=4, separators=(',', ': ')), "utf8"))
         saveConfig()
 
     def do_PUT(self):
@@ -1293,6 +1346,25 @@ class S(BaseHTTPRequestHandler):
         print ("in PUT method")
         self.data_string = self.rfile.read(int(self.headers['Content-Length']))
         put_dictionary = json.loads(self.data_string.decode('utf8'))
+        if self.path == "/entertainment":
+            if put_dictionary["colorspace"] == "rgb":
+                print("rgb data")
+                for light in put_dictionary["data"].keys():
+                    r = int((put_dictionary["data"][light][0] *  256 + put_dictionary["data"][light][1]) / 256)
+                    g = int((put_dictionary["data"][light][2] *  256 + put_dictionary["data"][light][3]) / 256)
+                    b = int((put_dictionary["data"][light][4] *  256 + put_dictionary["data"][light][5]) / 256)
+                    sendLightRequest(light, {"r": r,"g": g, "b": b})
+                    bridge_config["lights"][light]["state"]["xy"] = convert_rgb_xy(r, g, b)
+                    updateGroupStats(light)
+            elif put_dictionary["colorspace"] == "xy":
+                print("xy data")
+                for light in put_dictionary["data"].keys():
+                    bridge_config["lights"][light]["state"]["xy"] = [(put_dictionary["data"][light][0] * 256 + put_dictionary["data"][light][1]) / 65535, (put_dictionary["data"][light][2] * 256 +  put_dictionary["data"][light][3]) / 65535]
+                    bridge_config["lights"][light]["state"]["bri"] = int((put_dictionary["data"][light][4] * 256 + put_dictionary["data"][light][5]) / 255)
+                    sendLightRequest(light, {"xy": bridge_config["lights"][light]["state"]["xy"], "bri": bridge_config["lights"][light]["state"]["bri"]})
+                    updateGroupStats(light)
+            self.wfile.write(bytes("OK", "utf8"))
+            return
         url_pices = self.path.split('/')
         print(self.path)
         print(self.data_string)
@@ -1480,6 +1552,7 @@ if __name__ == "__main__":
         Thread(target=ssdpBroadcast, args=[getIpAddress(), mac]).start()
         Thread(target=schedulerProcessor).start()
         Thread(target=syncWithLights).start()
+        Thread(target=entertainmentService).start()
         Thread(target=run, args=[False]).start()
         Thread(target=run, args=[True]).start()
         while True:
