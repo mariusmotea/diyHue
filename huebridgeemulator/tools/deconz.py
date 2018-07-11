@@ -1,5 +1,7 @@
 from threading import Thread
 
+from huebridgeemulator.tools.websocket import websocketClient
+
 
 def scanDeconz(registry):
     if not registry.deconz["enabled"]:

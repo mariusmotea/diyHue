@@ -5,7 +5,7 @@
 from datetime import datetime
 import json
 from subprocess import check_output
-from time import sleep
+import time
 
 from huebridgeemulator.tools.colors import convert_rgb_xy
 from huebridgeemulator.tools.group import update_group_status
@@ -22,17 +22,18 @@ def sync_with_lights(registry):
     sync_with_lights_logger.info("Thread SyncWithLights starting")
     while True:
         sync_with_lights_logger.debug("Sync with lights")
-        for index, light in registry.lights.items():
+        for light in registry.lights.values():
             try:
-                if light.address.protocol == "native":
-                    # TODO
+                if light.address.protocol in ("yeelight", "tplink", "hue"):
+                    light.update_status()
+                elif light.address.protocol == "native":
                     url = "http://{}/get?light={}".format(
-                        bridge_config["lights_address"][light]["ip"],
-                        str(bridge_config["lights_address"][light]["light_nr"]))
+                        light.address.ip,
+                        str(light.address.light_nr))
+                    # TODO convert
+                    # light.update_status()
                     light_data = json.loads(sendRequest(url, "GET", "{}"))
                     bridge_config["lights"][light]["state"].update(light_data)
-                elif light.address.protocol == "hue":
-                    light.update_status()
                 elif light.address.protocol == "ikea_tradfri":
                     # TODO
                     command_line = ('./coap-client-linux -m get -u "{}" -k "{}" '
@@ -83,9 +84,6 @@ def sync_with_lights(registry):
                             convert_rgb_xy(light_data["color"]["r"],
                                            light_data["color"]["g"],
                                            light_data["color"]["b"])
-                elif light.address.protocol == "yeelight":
-                    # getting states from the yeelight
-                    light.update_status()
                 elif light.address.protocol == "domoticz":
                     # TODO
                     # domoticz protocol
@@ -108,13 +106,16 @@ def sync_with_lights(registry):
                 light.set_unreachable()
                 sync_with_lights_logger.warning("light %s is unreachable", light)
                 raise exp
-        sleep(10)  # wait at last 10 seconds before next sync
         i = 0
         while i < 300:  # sync with lights every 300 seconds or instant if one user is connected
             for user in registry.config["whitelist"].keys():
-                # FIXME: Why this comparison ? We should compare datetime objects instead of str ?
-                now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-                if registry.config["whitelist"][user]["last use date"] == now:
+                last_use_date_str = registry.config["whitelist"][user]["last use date"]
+                last_use_date = datetime.strptime(last_use_date_str, "%Y-%m-%dT%H:%M:%S")
+                if last_use_date <= datetime.now():
+                    if i < 5:
+                        # Wait at least 5 seconds between 2 light sync
+                        # TODO optimize this
+                        time.sleep(5 - i)
                     i = 300
                     break
-            sleep(1)
+            time.sleep(1)

@@ -2,7 +2,6 @@ import requests
 import json
 import time
 
-from huebridgeemulator.device.yeelight import sendToYeelight
 
 
 def sendRequest(url, method, data, timeout=3, delay=0):

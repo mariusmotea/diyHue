@@ -7,11 +7,16 @@ def update_group_status(registry, light_id):
     for group in registry.groups.values():
         if hasattr(group, "lights") and isinstance(group.lights, list) and light_id in group.lights:
             light = registry.lights[light_id]
-            group.action.bri = light.state.bri
-            group.action.xy = light.state.xy
-            group.action.ct = light.state.ct
-            group.action.hue = light.state.hue
-            group.action.sat = light.state.sat
+            if hasattr(light.state, 'bri'):
+                group.action.bri = light.state.bri
+            if hasattr(light.state, 'xy'):
+                group.action.xy = light.state.xy
+            if hasattr(light.state, 'ct'):
+                group.action.ct = light.state.ct
+            if hasattr(light.state, 'hue'):
+                group.action.hue = light.state.hue
+            if hasattr(light.state, 'sat'):
+                group.action.sat = light.state.sat
             any_on = False
             all_on = True
             for group_light_id in group.lights:

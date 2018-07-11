@@ -1,5 +1,7 @@
-import pytz
+"""hueBridgeEmulator constants."""
 import time
+
+import pytz
 
 
 RESOURCE_TYPES = [
@@ -221,4 +223,3 @@ REGISTRY_LINKBUTTON = {
     # TODO what is this stuff ???
     "linkbutton_auth": "SHVlOkh1ZQ==",
 }
-
