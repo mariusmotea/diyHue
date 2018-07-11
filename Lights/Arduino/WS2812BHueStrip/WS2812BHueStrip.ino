@@ -15,7 +15,7 @@
 #define button2_pin 5 // off and bri down
 #define use_hardware_switch false // on/off state and brightness can be controlled with above gpio pins. Is mandatory to connect them to ground with 10K resistors
 
-// if you want to setup static ip uncomment these 3 lines and line 72
+// if you want to setup static ip uncomment these 3 lines and line 326
 //IPAddress strip_ip ( 192,  168,   10,  95);
 //IPAddress gateway_ip ( 192,  168,   10,   1);
 //IPAddress subnet_mask(255, 255, 255,   0);
@@ -25,8 +25,10 @@ bool light_state[lightsCount], in_transition;
 int ct[lightsCount], hue[lightsCount];
 float step_level[lightsCount][3], current_rgb[lightsCount][3], x[lightsCount], y[lightsCount];
 byte mac[6];
+byte packetBuffer[4];
 
 ESP8266WebServer server(80);
+WiFiUDP Udp;
 
 RgbColor red = RgbColor(255, 0, 0);
 RgbColor green = RgbColor(0, 255, 0);
@@ -366,6 +368,7 @@ void setup() {
   // ArduinoOTA.setPassword((const char *)"123");
 
   ArduinoOTA.begin();
+  Udp.begin(2100);
 
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
   digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
@@ -634,8 +637,21 @@ void setup() {
   server.begin();
 }
 
+void entertainment() {
+  int packetSize = Udp.parsePacket();
+  if (packetSize) {
+    Udp.read(packetBuffer, packetSize);
+    for (int j = 0; j < pixelCount / lightsCount ; j++)
+    {
+      strip.SetPixelColor(j + packetBuffer[3] * pixelCount / lightsCount, RgbColor(packetBuffer[0], packetBuffer[1], packetBuffer[2]));
+    }
+    strip.Show();
+  }
+}
+
 void loop() {
   ArduinoOTA.handle();
   server.handleClient();
   lightEngine();
+  entertainment();
 }

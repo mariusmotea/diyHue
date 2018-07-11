@@ -46,8 +46,10 @@ bool light_state, in_transition;
 int  ct, hue;
 float step_level[5], current_rgb_cct[5], x, y;
 byte mac[6];
+byte packetBuffer[4];
 
 ESP8266WebServer server(80);
+WiFiUDP Udp;
 
 void convert_hue()
 {
@@ -347,6 +349,7 @@ void setup() {
   // ArduinoOTA.setPassword((const char *)"123");
 
   ArduinoOTA.begin();
+  Udp.begin(2100);
 
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
   digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
@@ -378,23 +381,23 @@ void setup() {
       }
       else if (server.argName(i) == "r") {
         rgb_cct[0] = server.arg(i).toInt();
-        color_mode = 0;
+        color_mode = 0; rgb_cct[3] = 0; rgb_cct[4] = 0;
       }
       else if (server.argName(i) == "g") {
         rgb_cct[1] = server.arg(i).toInt();
-        color_mode = 0;
+        color_mode = 0; rgb_cct[3] = 0; rgb_cct[4] = 0;
       }
       else if (server.argName(i) == "b") {
         rgb_cct[2] = server.arg(i).toInt();
-        color_mode = 0;
+        color_mode = 0; rgb_cct[3] = 0; rgb_cct[4] = 0;
       }
       else if (server.argName(i) == "ww") {
         rgb_cct[3] = server.arg(i).toInt();
-        color_mode = 0;
+        color_mode = 0; rgb_cct[0] = 0; rgb_cct[1] = 0; rgb_cct[2] = 0;
       }
       else if (server.argName(i) == "cw") {
         rgb_cct[4] = server.arg(i).toInt();
-        color_mode = 0;
+        color_mode = 0; rgb_cct[0] = 0; rgb_cct[1] = 0; rgb_cct[2] = 0;
       }
       else if (server.argName(i) == "x") {
         x = server.arg(i).toFloat();
@@ -619,8 +622,20 @@ void setup() {
   server.begin();
 }
 
+void entertainment(){
+  int packetSize = Udp.parsePacket();
+  if (packetSize) {
+    Udp.read(packetBuffer, packetSize);
+    for (uint8_t color = 0; color < 3; color++) {
+      pwm_set_duty((int)(packetBuffer[color] * 4), color);
+    }
+    pwm_start();
+  }
+}
+
 void loop() {
   ArduinoOTA.handle();
   server.handleClient();
   lightEngine();
+  entertainment();
 }
