@@ -1,17 +1,23 @@
-## diyHue
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=J5NHHR47MVTMW)  
-This project emulates a Philips Hue Bridge that is able to control ZigBee lights (using Raspbee module or original Hue Bridge or IKEA Tradfri Gateway), Mi-Light bulbs (using MiLight Hub), Neopixel strips (WS2812B and SK6812) and any cheep ESP8266 based bulb from market by replacing firmware with custom one. Is written in python and will run on all small boxes like RaspberryPi. There are provided sketches for Hue Dimmer Switch, Hue Tap Switch and Hue Motion Sensor. Lights are two-way synchronized so any change made from original Philips/Tradfri sensors and switches will be applied also to bridge emulator.
+[![license](https://img.shields.io/badge/license-GPLv3%2FApache%202.0%2FCC%20BY--SA%204.0-blue.svg)](https://github.com/mariusmotea/diyHue/blob/master/LICENSE.md)
+
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/mariusmotea/diyHue.svg)](http://isitmaintained.com/project/mariusmotea/diyHue "Average time to resolve an issue") [![Percentage of issues still open](http://isitmaintained.com/badge/open/mariusmotea/diyHue.svg)](http://isitmaintained.com/project/mariusmotea/diyHue "Percentage of issues still open")
+
+[![JoinSlack](https://img.shields.io/badge/Join%20us-on%20Slack-green.svg)](https://slackinvite.squishedmooo.com/) [![SlackStatus](https://slackinvite.squishedmooo.com/badge.svg?colorB=8ebc06)](https://slackinvite.squishedmooo.com/)
+
+ARM: [![ARM](https://gitlab.squishedmooo.com/cheesemarathon/diyhue-docker-arm/badges/master/build.svg)](https://gitlab.squishedmooo.com/cheesemarathon/diyhue-docker-arm) x86: [![x86](https://gitlab.squishedmooo.com/cheesemarathon/diyhue-docker/badges/master/build.svg)](https://gitlab.squishedmooo.com/cheesemarathon/diyhue-docker)
+
+This project emulates a Philips Hue Bridge that is able to control ZigBee lights (using Raspbee module, original Hue Bridge or IKEA Tradfri Gateway), Mi-Light bulbs (using MiLight Hub), Neopixel strips (WS2812B and SK6812) and any cheap ESP8266 based bulb  by replacing the firmware with a custom one. It is written in python and will run on all small devices such as the RaspberryPi. Arduino sketches are provided for the Hue Dimmer Switch, Hue Tap Switch and Hue Motion Sensor. Lights are two-way synchronized so any change made from original Philips/Tradfri sensors and switches will also be applied to the bridge emulator.
 
 ![diyHue ecosystem](https://raw.githubusercontent.com/mariusmotea/diyHue/develop/Images/hue-map.png)
 
 
 ### Requirements:
- - python
+ - python 3
  - nmap package for esp8266 lights autodiscover ```sudo apt install nmap```
  - python ws4py package only if zigbee module is used ```sudo pip install ws4py```
 
 
-## TO DO
+## To Do
  - ~~Working directly with ZigBee lights, switches and sensors with RaspBee module~~
  - ~~control IKEA Trådfri lights from HUE applications~~
  - ~~Create ESP8266 bridge device to add MI Lights to Hue Bridge emulator.~~
@@ -28,6 +34,7 @@ This project emulates a Philips Hue Bridge that is able to control ZigBee lights
   - Go to sleep
   - Switches (custom esp8266 switches)
   - Autodiscover lights
+  - Hue entertainment
   
 ## Working devices and applications:
   - Amazon Alexa (control only the lights)
@@ -40,6 +47,7 @@ This project emulates a Philips Hue Bridge that is able to control ZigBee lights
   - Philips Ambilight TV's 
   - Kodi Hue Ambilight
   - Jeedom
+  - Hue Sync for PC
  
  ## Working smartphone applications:
   - Hue (official application)
@@ -63,27 +71,26 @@ This project emulates a Philips Hue Bridge that is able to control ZigBee lights
   - Pwm CCT
   - Pwm Dimming (up to 6 lights for every esp8266)
   - On/Off plugs/lights (up to 6 lights for every esp8266)
-  - On/Off 433Mhz devices (multiple devices for every esp8266). Credits Mevel
+  - On/Off 433Mhz devices (multiple devices for every esp8266)
   
 ## Stability:
-All the lights in my house are controlled by this solution so the stability is very important to me as there is no turn back to classic illumination (all switches were replaces with Ikea Tradfri Remotes and holes covered), however i don't use all the functions to perform full tests on every change. What i use currently is Deconz with all Tradfri devices (lights + sensors), Xiaomi Motion Sensor, native ESP8266 bulbs, ESP8266 + WS2812B strips and Xiaomi YeeLight color bulb.
+All the lights in my house are controlled by this solution so the stability is very important to me as there is no turning back to classic illumination (all switches were replaces with Ikea Tradfri Remotes and holes covered). However I don't use all the functions, so i'm unable to perform full tests on every change. What I do currently use is Deconz with all Tradfri devices (lights + sensors), Xiaomi Motion Sensor, native ESP8266 bulbs, ESP8266 + WS2812B strips and Xiaomi YeeLight color bulb.
   
-Please submit [here](https://github.com/mariusmotea/diyHue/issues/27) any other device/application that is working with this emulator.
+Please submit [ in this issue](https://github.com/mariusmotea/diyHue/issues/27) or on our [slack team](https://slackinvite.squishedmooo.com/) any other device/application that is working with this emulator.
   
-Check [Wiki page](https://github.com/mariusmotea/diyHue/wiki) for more details  
+Check the [Wiki page](https://github.com/mariusmotea/diyHue/wiki) for more details  
   
 [![Youtube Demo](https://img.youtube.com/vi/c6MsG3oIehY/0.jpg)](https://www.youtube.com/watch?v=c6MsG3oIehY)
 
-I push updates fast so if you want to notified just add this repo to watch
+I push updates fast so if you want to be notified, just watch this repo
 
-Contributions are welcomed  
+Contributions are welcome 
 
 Hue living color light project for 3D printing: https://www.thingiverse.com/thing:2773413
 
 ## qtHue
 You may want to see also my new project [qtHue](https://github.com/mariusmotea/qtHue) that provide a simple user interface for controlling the lights.
 ![qtHue](https://github.com/mariusmotea/qtHue/blob/master/Screenshot.png?raw=true)
-
 
 Credits:
   - 
@@ -94,4 +101,6 @@ Credits:
   - probonopd https://github.com/probonopd/ESP8266HueEmulator
   - sidoh https://github.com/sidoh/esp8266_milight_hub
   - StefanBruens https://github.com/StefanBruens/ESP8266_new_pwm
-  - Cédric @ticed35 for linkbutton implementation.
+  - Cédric @ticed35 for linkbutton implementation
+  - [@cheesemarathon](https://github.com/cheesemarathon) - Help with Docker images
+  - [@Mevel](https://github.com/Mevel) - 433Mhz devices
