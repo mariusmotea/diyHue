@@ -15,9 +15,23 @@ from uuid import getnode as get_mac
 from urllib.parse import urlparse, parse_qs
 from functions import *
 
+docker = False # Set only to true if using script in Docker container
+
 update_lights_on_startup = False # if set to true all lights will be updated with last know state on startup.
 
-mac = '%012x' % get_mac()
+def getIpAddress():
+    if len(sys.argv) == 3:
+       return sys.argv[2]
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    return s.getsockname()[0]
+
+if len(sys.argv) == 3:
+    mac = str(sys.argv[1]).replace(":","")
+else:
+    mac = check_output("cat /sys/class/net/$(ip -o addr | grep " + getIpAddress() + " | awk '{print $2}')/address", shell=True).decode('utf-8').replace(":","")[:-1]
+
+print(mac)
 
 run_service = True
 
@@ -45,6 +59,7 @@ def entertainmentService():
     lightStatus = {}
     while True:
         data = serverSocket.recvfrom(106)[0]
+        nativeLights = {}
         if data[:9].decode('utf-8') == "HueStream":
             if data[14] == 0: #rgb colorspace
                 i = 16
@@ -62,8 +77,9 @@ def entertainmentService():
                             else:
                                 bridge_config["lights"][str(lightId)]["state"].update({"on": True, "bri": int((r + g + b) / 3), "xy": convert_rgb_xy(r, g, b), "colormode": "xy"})
                             if bridge_config["lights_address"][str(lightId)]["protocol"] == "native":
-                                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
-                                sock.sendto(bytes([r]) + bytes([g]) + bytes([b]) + bytes([bridge_config["lights_address"][str(lightId)]["light_nr"] - 1]), (bridge_config["lights_address"][str(lightId)]["ip"], 2100))
+                                if bridge_config["lights_address"][str(lightId)]["ip"] not in nativeLights:
+                                    nativeLights[bridge_config["lights_address"][str(lightId)]["ip"]] = {}
+                                nativeLights[bridge_config["lights_address"][str(lightId)]["ip"]][bridge_config["lights_address"][str(lightId)]["light_nr"] - 1] = [r, g, b]
                             else:
                                 if fremeID == 24: # => every seconds, increase in case the destination device is overloaded
                                     if r == 0 and  g == 0 and  b == 0:
@@ -97,14 +113,22 @@ def entertainmentService():
                             else:
                                 bridge_config["lights"][str(lightId)]["state"].update({"on": True, "bri": bri, "xy": [x,y], "colormode": "xy"})
                             if bridge_config["lights_address"][str(lightId)]["protocol"] == "native":
-                                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
-                                sock.sendto(bytes(convert_xy(x, y, bri)) + bytes([bridge_config["lights_address"][str(lightId)]["light_nr"] - 1]), (bridge_config["lights_address"][str(lightId)]["ip"], 2100))
+                                if bridge_config["lights_address"][str(lightId)]["ip"] not in nativeLights:
+                                    nativeLights[bridge_config["lights_address"][str(lightId)]["ip"]] = {}
+                                nativeLights[bridge_config["lights_address"][str(lightId)]["ip"]][bridge_config["lights_address"][str(lightId)]["light_nr"] - 1] = convert_xy(x, y, bri)
                             else:
                                 fremeID += 1
                                 if fremeID == 24 : #24 = every seconds, increase in case the destination device is overloaded
                                     sendLightRequest(str(lightId), {"xy": [x,y]})
                                     fremeID = 0
                             updateGroupStats(lightId)
+        if len(nativeLights) is not 0:
+            for ip in nativeLights.keys():
+                udpmsg = bytearray()
+                for light in nativeLights[ip].keys():
+                    udpmsg += bytes([light]) + bytes([nativeLights[ip][light][0]]) + bytes([nativeLights[ip][light][1]]) + bytes([nativeLights[ip][light][2]])
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+                sock.sendto(udpmsg, (ip, 2100))
 
 
 light_types = {"LCT015": {"state": {"on": False, "bri": 200, "hue": 0, "sat": 0, "xy": [0.0, 0.0], "ct": 461, "alert": "none", "effect": "none", "colormode": "ct", "reachable": True}, "type": "Extended color light", "swversion": "1.29.0_r21169"}, "LST002": {"state": {"on": False, "bri": 200, "hue": 0, "sat": 0, "xy": [0.0, 0.0], "ct": 461, "alert": "none", "effect": "none", "colormode": "ct", "reachable": True}, "type": "Color light", "swversion": "5.90.019950"}, "LWB010": {"state": {"on": False, "bri": 254,"alert": "none", "reachable": True}, "type": "Dimmable light", "swversion": "1.15.0_r18729"}, "LTW001": {"state": {"on": False, "colormode": "ct", "alert": "none", "reachable": True, "bri": 254, "ct": 230}, "type": "Color temperature light", "swversion": "5.50.1.19085"}, "Plug 01": {"state": {"on": False, "alert": "none", "reachable": True}, "type": "On/Off plug-in unit", "swversion": "V1.04.12"}}
@@ -211,6 +235,8 @@ loadConfig()
 def saveConfig(filename='/opt/hue-emulator/config.json'):
     with open(filename, 'w') as fp:
         json.dump(bridge_config, fp, sort_keys=True, indent=4, separators=(',', ': '))
+    if docker:
+        Popen(["cp", "config.json", "export/"])
 
 def generateSensorsState():
     for sensor in bridge_config["sensors"]:
@@ -221,9 +247,6 @@ def generateSensorsState():
                     sensors_state[sensor]["state"].update({key: datetime.now()})
 
 generateSensorsState()
-
-def getIpAddress():
-    return "192.168.8.1"
 
 ip_pices = getIpAddress().split(".")
 bridge_config["config"]["ipaddress"] = getIpAddress()
@@ -266,7 +289,7 @@ def schedulerProcessor():
             saveConfig()
             Thread(target=daylightSensor).start()
             if (datetime.now().strftime("%H") == "23" and datetime.now().strftime("%A") == "Sunday"): #backup config every Sunday at 23:00:10
-                saveConfig("config-backup-" + datetime.now().strftime("%Y-%m-%d") + ".json")
+                saveConfig("export/config-backup-" + datetime.now().strftime("%Y-%m-%d") + ".json")
         sleep(1)
 
 def switchScene(group, direction):
@@ -639,7 +662,7 @@ def updateGroupStats(light): #set group stats based on lights status in that gro
             any_on = False
             all_on = True
             for group_light in bridge_config["groups"][group]["lights"]:
-                if bridge_config["lights"][light]["state"]["on"] == True:
+                if bridge_config["lights"][group_light]["state"]["on"]:
                     any_on = True
                 else:
                     all_on = False
@@ -1400,7 +1423,10 @@ class S(BaseHTTPRequestHandler):
                     bridge_config[category][key] = update_data[category][key]
             self._set_end_headers(bytes(json.dumps([{"success": {"/config/swupdate/checkforupdate": True}}],separators=(',', ':')), "utf8"))
         else:
-            post_dictionary = json.loads(self.data_string.decode('utf8'))
+            raw_json = self.data_string.decode('utf8')
+            raw_json = raw_json.replace("\t","")
+            raw_json = raw_json.replace("\n","")
+            post_dictionary = json.loads(raw_json)
             print(self.data_string)
         url_pices = self.path.split('/')
         if len(url_pices) == 4: #data was posted to a location
@@ -1529,9 +1555,6 @@ class S(BaseHTTPRequestHandler):
                                 Popen(["killall", "entertainment-srv"])
                                 bridge_config["groups"][url_pices[4]]["stream"].update({"active": False, "owner": None})
                     elif "scene" in put_dictionary: #scene applied to group
-                        #send all unique ip's in thread mode for speed
-                        lightsIps = []
-                        processedLights = []
                         for light in bridge_config["scenes"][put_dictionary["scene"]]["lights"]:
                             bridge_config["lights"][light]["state"].update(bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
                             if "xy" in bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]:
@@ -1540,16 +1563,9 @@ class S(BaseHTTPRequestHandler):
                                 bridge_config["lights"][light]["state"]["colormode"] = "ct"
                             elif "hue" in bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]:
                                 bridge_config["lights"][light]["state"]["colormode"] = "hs"
-                            if bridge_config["lights_address"][light]["ip"] not in lightsIps:
-                                lightsIps.append(bridge_config["lights_address"][light]["ip"])
-                                processedLights.append(light)
-                                Thread(target=sendLightRequest, args=[light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]]).start()
-                        #now send the rest of the requests in non threaded mode
-                        for light in bridge_config["scenes"][put_dictionary["scene"]]["lights"]:
-                            if light not in processedLights:
-                                sendLightRequest(light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light])
+                            Thread(target=sendLightRequest, args=[light, bridge_config["scenes"][put_dictionary["scene"]]["lightstates"][light]]).start()
                             updateGroupStats(light)
-
+                            sleep(0.1)
                     elif "bri_inc" in put_dictionary:
                         bridge_config["groups"][url_pices[4]]["action"]["bri"] += int(put_dictionary["bri_inc"])
                         if bridge_config["groups"][url_pices[4]]["action"]["bri"] > 254:
@@ -1580,7 +1596,8 @@ class S(BaseHTTPRequestHandler):
                         for light in bridge_config["lights"].keys():
                             if "virtual_light" not in bridge_config["alarm_config"] or light != bridge_config["alarm_config"]["virtual_light"]:
                                 bridge_config["lights"][light]["state"].update(put_dictionary)
-                                sendLightRequest(light, put_dictionary)
+                                Thread(target=sendLightRequest, args=[light, put_dictionary]).start()
+                                sleep(0.1)
                         for group in bridge_config["groups"].keys():
                             bridge_config["groups"][group][url_pices[5]].update(put_dictionary)
                             if "on" in put_dictionary:
@@ -1591,19 +1608,10 @@ class S(BaseHTTPRequestHandler):
                             bridge_config["groups"][url_pices[4]]["state"]["any_on"] = put_dictionary["on"]
                             bridge_config["groups"][url_pices[4]]["state"]["all_on"] = put_dictionary["on"]
                         bridge_config["groups"][url_pices[4]][url_pices[5]].update(put_dictionary)
-                        #send all unique ip's in thread mode for speed
-                        lightsIps = []
-                        processedLights = []
                         for light in bridge_config["groups"][url_pices[4]]["lights"]:
                             bridge_config["lights"][light]["state"].update(put_dictionary)
-                            if bridge_config["lights_address"][light]["ip"] not in lightsIps:
-                                lightsIps.append(bridge_config["lights_address"][light]["ip"])
-                                processedLights.append(light)
-                                Thread(target=sendLightRequest, args=[light, put_dictionary]).start()
-                        #now send the rest of the requests in non threaded mode
-                        for light in bridge_config["groups"][url_pices[4]]["lights"]:
-                            if light not in processedLights:
-                                sendLightRequest(light, put_dictionary)
+                            Thread(target=sendLightRequest, args=[light, put_dictionary]).start()
+                            sleep(0.1)
                 elif url_pices[3] == "lights": #state is applied to a light
                     for key in put_dictionary.keys():
                         if key in ["ct", "xy"]: #colormode must be set by bridge
