@@ -3,7 +3,7 @@
 
 opkg update
 wait
-opkg install gcc make automake ca-bundle git git-http nano nmap python3 python3-pip openssl-util curl unzip
+opkg install ca-bundle git git-http nano nmap python3 python3-pip openssl-util curl unzip
 wait
 export LC_ALL=C
 mkdir /opt
