@@ -18,7 +18,7 @@ wait
 cd /opt/tmp/diyHue/BridgeEmulator
 cp HueEmulator3.py config.json updater /opt/hue-emulator/
 cp -r web-ui /opt/hue-emulator/
-cp -r functions debug /opt/hue-emulator/
+cp -r functions protocols debug /opt/hue-emulator/
 cp entertainment-mips /opt/hue-emulator/entertainment-srv
 wait
 cp hueemulator /etc/init.d/
@@ -40,6 +40,7 @@ curl "http://mariusmotea.go.ro:9002/gencert?mac=$mac" > /opt/hue-emulator/cert.p
 chmod +x /etc/init.d/hueemulator
 chmod +x /opt/hue-emulator/HueEmulator3.py
 chmod +x /opt/hue-emulator/debug
+chmod +x /opt/hue-emulator/protocols
 chmod +x /opt/hue-emulator/updater
 chmod +x /opt/hue-emulator/web-ui
 chmod +x /opt/hue-emulator/functions
