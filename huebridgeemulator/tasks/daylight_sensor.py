@@ -6,7 +6,7 @@ from datetime import datetime
 import time
 from astral import Astral, Location
 
-from huebridgeemulator.tools import rulesProcessor
+from huebridgeemulator.tools import rules_processor
 from huebridgeemulator.logger import daylight_logger
 
 
@@ -41,11 +41,11 @@ def daylight_sensor(registry, sensors_state):
         current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         registry.sensors["1"].state = {"daylight": False, "lastupdated": current_time}
         sensors_state["1"]["state"]["daylight"] = current_time
-        rulesProcessor("1", current_time)
+        rules_processor("1", current_time)
     if delta_sunrise_offset > 0 and delta_sunrise_offset < 3600:
         daylight_logger.debug("will start the sleep for sunrise")
         time.sleep(delta_sunset_offset)
         current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         registry.sensors["1"].state = {"daylight": True, "lastupdated": current_time}
         sensors_state["1"]["state"]["daylight"] = current_time
-        rulesProcessor("1", current_time)
+        rules_processor("1", current_time)

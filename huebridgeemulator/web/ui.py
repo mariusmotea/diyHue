@@ -9,13 +9,13 @@ import requests
 import hug
 from falcon import HTTP_404
 
-from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.web.templates import get_template, get_static
 from huebridgeemulator.tools.deconz import scanDeconz
 from huebridgeemulator.device.tradfri import (
     add_tradfri_scene_remote, add_tradfri_ct_remote, add_tradfri_dimmer)
 from huebridgeemulator.device.hue.light import HueLight, HueLightAddress
 from huebridgeemulator.device.hue import add_hue_switch
+from huebridgeemulator.tools import send_email, rules_processor
 
 
 MIMETYPES = {"json": "application/json",
@@ -217,8 +217,7 @@ def deconz(request, response):  # pylint: disable=W0613
                                 request.params["mode_" + key][0]
     else:
         # TODO ADD Comments
-        registry = request.context['registry']
-        scanDeconz(registry)
+        scanDeconz(request.context['registry'])
     return template.render({"deconz": bridge_config["deconz"],
                             "sensors": bridge_config["sensors"],
                             "groups": bridge_config["groups"]})
@@ -247,7 +246,7 @@ def switch(request, response):  # pylint: disable=W0612
             elif request.params["devicetype"][0] == "ZLLPresence":
                 print("ZLLPresence")
                 addHueMotionSensor(request.params["mac"][0])
-            generateSensorsState(bridge_config, request.context['sensors_state'])
+            regsitry.generate_sensors_state(bridge_config, request.context['sensors_state'])
     else:  # switch action request
         for sensor in bridge_config["sensors"]:
             # match senser id based on mac address
@@ -261,7 +260,7 @@ def switch(request, response):  # pylint: disable=W0612
                         "lastupdated": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")})
                     current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
                     sensors_state[sensor]["state"]["lastupdated"] = current_time
-                    rulesProcessor(bridge_config, sensor, current_time)
+                    rules_processor(bridge_config, sensor, current_time)
                 elif bridge_config["sensors"][sensor]["type"] == "ZLLPresence" and \
                         "presence" in request.params:
                     if str(bridge_config["sensors"][sensor]["state"]["presence"]).lower() != request.params["presence"][0]:
@@ -270,12 +269,12 @@ def switch(request, response):  # pylint: disable=W0612
                     bridge_config["sensors"][sensor]["state"].update({
                         "presence": True if request.params["presence"][0] == "true" else False,
                         "lastupdated": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")})
-                    rulesProcessor(bridge_config, sensor)
+                    rules_processor(bridge_config, sensor)
                     # if alarm is activ trigger the alarm
                     if "virtual_light" in bridge_config["alarm_config"] and \
                             bridge_config["lights"][bridge_config["alarm_config"]["virtual_light"]]["state"]["on"] and \
                             bridge_config["sensors"][sensor]["state"]["presence"]:
-                        sendEmail(bridge_config["sensors"][sensor]["name"])
+                        send_email(bridge_config["sensors"][sensor]["name"])
                         # triger_horn() need development
                 elif bridge_config["sensors"][sensor]["type"] == "ZLLLightLevel" and "lightlevel" in request.params:
                     if str(bridge_config["sensors"][sensor]["state"]["dark"]).lower() != request.params["dark"][0]:
@@ -287,4 +286,4 @@ def switch(request, response):  # pylint: disable=W0612
                         "daylight": True if request.params["daylight"][0] == "true" else False,
                         "lastupdated": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")})
                     # Process the rules to perform the action configured by application
-                    rulesProcessor(bridge_config, sensor)
+                    rules_processor(bridge_config, sensor)
