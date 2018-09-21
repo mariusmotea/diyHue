@@ -1,5 +1,5 @@
-huebridgeemulator
-=================
+diyHue Modules
+==============
 
 .. toctree::
    :maxdepth: 4

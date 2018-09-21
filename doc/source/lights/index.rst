@@ -5,7 +5,7 @@ Lights
     :maxdepth: 2
     :caption: Contents:
 
-    lights
+    diylights
     ikea
     milight
     hue
