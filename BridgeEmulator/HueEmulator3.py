@@ -10,6 +10,7 @@ import ssl
 import sys
 import urllib.parse
 import urllib.request
+from multiprocessing import Process
 from collections import defaultdict
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -99,7 +100,7 @@ def entertainmentService():
                                     nativeLights[bridge_config["lights_address"][str(lightId)]["ip"]] = {}
                                 nativeLights[bridge_config["lights_address"][str(lightId)]["ip"]][bridge_config["lights_address"][str(lightId)]["light_nr"] - 1] = [r, g, b]
                             else:
-                                if fremeID == 24: # => every seconds, increase in case the destination device is overloaded
+                                if fremeID >= 16: # => every seconds, increase in case the destination device is overloaded
                                     if r == 0 and  g == 0 and  b == 0:
                                         if lightStatus[lightId]["on"]:
                                             sendLightRequest(str(lightId), {"on": False, "transitiontime": 3})
@@ -113,7 +114,7 @@ def entertainmentService():
                                     else:
                                         sendLightRequest(str(lightId), {"xy": convert_rgb_xy(r, g, b), "transitiontime": 3})
                             fremeID += 1
-                            if fremeID == 25:
+                            if fremeID == 17:
                                 fremeID = 0
                             updateGroupStats(lightId)
                         i = i + 9
@@ -479,10 +480,10 @@ def sendLightRequest(light, data):
             if "protocols." + protocol_name == protocol.__name__:
                 try:
                     light_state = protocol.set_light(bridge_config["lights_address"][light]["ip"], bridge_config["lights"][light], data)
-                    bridge_config["lights"][light]["state"].update(light_state)
+                    if light_state: bridge_config["lights"][light]["state"].update(light_state)
                 except:
                     bridge_config["lights"][light]["state"]["reachable"] = False
-                    logging.exception("request error")
+                    logging.exception("Error sending request: {}".format(e))
                 return
 
         if bridge_config["lights_address"][light]["protocol"] == "native": #ESP8266 light or strip
@@ -694,7 +695,7 @@ def syncWithLights(): #update Hue Bridge lights states
                 protocol_name = bridge_config["lights_address"][light]["protocol"]
                 for protocol in protocols:
                     if "protocols." + protocol_name == protocol.__name__:
-                        light_state = protocol.get_light_state(bridge_config["lights_address"][light]["ip"], bridge_config["lights"][light])
+                        light_state = protocol.get_state(bridge_config["lights_address"][light]["ip"], bridge_config["lights"][light])
                         bridge_config["lights"][light]["state"].update(light_state)
                 if bridge_config["lights_address"][light]["protocol"] == "native":
                     light_data = json.loads(sendRequest("http://" + bridge_config["lights_address"][light]["ip"] + "/get?light=" + str(bridge_config["lights_address"][light]["light_nr"]), "GET", "{}"))
@@ -1579,8 +1580,24 @@ def run(https, server_class=ThreadingSimpleServer, handler_class=S):
     httpd.serve_forever()
     httpd.server_close()
 
+def kill_processes(processes):
+    """ Wait for each process to die until timeout is reached, then terminate. """
+    print('Killing processes...')
+    timeout = 2
+    for proc in processes:
+        proc.join()
+        p_sec = 0
+        for second in range(timeout):
+            if proc.is_alive():
+                time.sleep(1)
+                p_sec += 1
+        if p_sec >= timeout:
+            print('Terminating process {}'.format(proc))
+            proc.terminate()
+
 if __name__ == "__main__":
     updateConfig()
+    processes = []
     if bridge_config["deconz"]["enabled"]:
         scanDeconz()
     try:
@@ -1590,7 +1607,9 @@ if __name__ == "__main__":
         Thread(target=ssdpBroadcast, args=[getIpAddress(), mac]).start()
         Thread(target=schedulerProcessor).start()
         Thread(target=syncWithLights).start()
-        Thread(target=entertainmentService).start()
+        entertainmentProcess = Process(target=entertainmentService)
+        processes.append(entertainmentProcess)
+        entertainmentProcess.start()
         Thread(target=run, args=[False]).start()
         Thread(target=run, args=[True]).start()
         Thread(target=daylightSensor).start()
@@ -1600,5 +1619,6 @@ if __name__ == "__main__":
         logging.exception("server stopped ")
     finally:
         run_service = False
+        kill_processes(processes)
         saveConfig()
         logging.debug('config saved')

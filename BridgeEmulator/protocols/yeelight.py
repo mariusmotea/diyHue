@@ -68,8 +68,10 @@ def command(ip, api_method, param):
         msg = json.dumps({"id": 1, "method": api_method, "params": param}) + "\r\n"
         tcp_socket.send(msg.encode())
         tcp_socket.close()
-    except Exception:
-        logging.exception("Unexpected error")
+    except Exception as e:
+        logging.exception("Error with command: {}".format(e))
+        return False
+    return True
 
 
 def set_light(ip, light, data):
@@ -102,9 +104,21 @@ def set_light(ip, light, data):
     # see page 9 http://www.yeelight.com/download/Yeelight_Inter-Operation_Spec.pdf
     # check if hue wants to change brightness
     for key, value in payload.items():
-        command(ip, key, value)
+        if not command(ip, key, value):
+            print("[Yeelight] Command failed - key: {} // value: {}".format(key,value))
+            if key == "set_power": del data["on"]
+            elif key == "set_bright": del data["bri"]
+            elif key == "set_ct-abx": del data["ct"]
+            elif key == "set_hsv": 
+                del data["hue"]
+                del data["sat"]
+            elif key == "set_rgb": del data["xy"]
+            elif key == "start_cf": del data["alert"]
+    if "xy" in data and data["xy"]==light["state"]["xy"]:
+        del data["xy"]
+    return data # return the fields that were successfully updated
 
-def get_light_state(ip, light):
+def get_state(ip, light):
     state = {}
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.settimeout(5)
