@@ -3,6 +3,7 @@ __pycache__
 BridgeEmulator/web-ui/public/config.js
 node_modules
 env/
+*.swp
 *.egg-info/
 .tox/
 doc/build/

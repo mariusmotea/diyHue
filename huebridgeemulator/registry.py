@@ -73,7 +73,7 @@ class Registry(object):
         self.config['ipaddress'] = netifaces.ifaddresses(default_inf)[AF_INET][0]['addr']
         self.config['netmask'] = netifaces.ifaddresses(default_inf)[AF_INET][0]['netmask']
         self.config['gateway'] = netifaces.gateways()['default'][netifaces.AF_INET][0]
-        self.config['mac'] = netifaces.ifaddresses('wlp3s0')[AF_LINK][0]['addr']
+        self.config['mac'] = netifaces.ifaddresses(default_inf)[AF_LINK][0]['addr']
         # pylint: enable=I1101
         self.config['bridgeid'] = (self.config['mac'].replace(":", "")[:6] +
                                    'FFFE' +

@@ -11,10 +11,10 @@ from falcon import HTTP_404
 
 from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.web.templates import get_template, get_static
-from huebridgeemulator.http.websocket import scanDeconz
+from huebridgeemulator.tools.deconz import scanDeconz
 from huebridgeemulator.device.tradfri import (
     add_tradfri_scene_remote, add_tradfri_ct_remote, add_tradfri_dimmer)
-from huebridgeemulator.device.hue.light import HueLight
+from huebridgeemulator.device.hue.light import HueLight, HueLightAddress
 from huebridgeemulator.device.hue import add_hue_switch
 
 
@@ -80,13 +80,15 @@ authentication = hug.authentication.basic(hug.authentication.verify('Hue', 'Hue'
 # pylint: enable=C0103, E1120
 
 
-@hug.get('/hue/linkbutton', requires=authentication, output=hug.output_format.html)
+#@hug.get('/hue/linkbutton', requires=authentication, output=hug.output_format.html)
+@hug.get('/hue/linkbutton', output=hug.output_format.html)
 def linkbutton(request, response):  # pylint: disable=W0613
 
     """Server Hue Link button.
 
     .. todo"" handle user/password change
     """
+    print("EEE")
     registry = request.context['registry']
     template = get_template('webform_linkbutton.html.j2')
     if request.params.get('action') == "Activate":
@@ -124,14 +126,15 @@ def hue(request, response):
             query = requests.get(url)
             hue_lights = query.json()
             lights_found = 0
-            for hue_light in hue_lights:
+            for hue_light_id in hue_lights.keys():
                 # TODO test me
-                # import ipdb;ipdb.set_trace()
-                hue_light['address'] = {"username": response[0]["success"]["username"],
-                                        "light_id": hue_light,
-                                        "ip": request.params.get('ip'),
-                                        "protocol": "hue"}
-                new_light = HueLight(hue_light)
+                #import ipdb;ipdb.set_trace()
+                hue_light_address = HueLightAddress({"username": response[0]["success"]["username"],
+                                                     "light_id": hue_light_id,
+                                                     "ip": request.params.get('ip'),
+                                                     "protocol": "hue"})
+                hue_lights[hue_light_id]['address'] = hue_light_address
+                new_light = HueLight(hue_lights[hue_light_id])
                 registry.lights[new_light.index] = new_light
                 lights_found += 1
             if lights_found == 0:
@@ -214,7 +217,8 @@ def deconz(request, response):  # pylint: disable=W0613
                                 request.params["mode_" + key][0]
     else:
         # TODO ADD Comments
-        scanDeconz()
+        registry = request.context['registry']
+        scanDeconz(registry)
     return template.render({"deconz": bridge_config["deconz"],
                             "sensors": bridge_config["sensors"],
                             "groups": bridge_config["groups"]})

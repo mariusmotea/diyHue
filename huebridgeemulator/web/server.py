@@ -42,7 +42,7 @@ def start(registry, sensors_state):
     api = hug.API(__name__)
 
     host = ''
-    port = 8080
+    port = 80
     http_logger.info("Start HTTP server")
 
     api.http.serve(host=host, port=port)

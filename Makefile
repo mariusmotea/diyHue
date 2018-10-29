@@ -6,7 +6,7 @@ env:
 	env/bin/pip install -r requirements.txt
 	env/bin/pip install -r test_requirements.txt
 	env/bin/python setup.py develop
-	echo "You can now run `source env/bin/activate`"
+	echo "You can now run 'source env/bin/activate'"
 
 ### Test ###
 test:
