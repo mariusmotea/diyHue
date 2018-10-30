@@ -54,21 +54,27 @@ run_debug: docker_run_httpd
 	env/bin/huebridgeemulator  -c config.json -l DEBUG
 
 ### Docker ###
-docker_build:
+docker_run: docker_nginx_run docker_hbe_run
+
+docker_nginx_build:
+	cd nginx && docker build -t hue-bridge-emulator-nginx .
+
+docker_nginx_run:
+	#docker run -it -d --rm --name hbe-http -v `pwd`/https:/etc/nginx/external/ --net=host hue-bridge-emulator-nginx
+	docker run -it --rm --name hbe-http -v `pwd`/https:/etc/nginx/external/ --net=host hue-bridge-emulator-nginx
+
+docker_nginx_irun:
+	docker run -it    --rm --name hbe-http -v `pwd`/https:/etc/nginx/external/ --net=host --entrypoint=bash hue-bridge-emulator-nginx
+
+docker_hbe_build:
 	sudo rm -rf `find . -name  __pycache__`
 	docker build -t hue-bridge-emulator .
 
-docker_irun:
-	docker run -v $(WD)/config.json:/config.json --rm --name hbe --net=host -it --entrypoint=bash hue-bridge-emulator
+docker_hbe_run:
+	docker run -it -d --rm --name hbe -v $(WD)/config.json:/config.json --net=host hue-bridge-emulator
 
-docker_run:
-	docker run -it -v $(WD)/config.json:/config.json --rm --name hbe --net=host hue-bridge-emulator
-
-docker_run_httpd: https/dh.pem _https/keys
-	docker run -it -d --rm --name hbe-http -v `pwd`/https:/etc/nginx/external/ --net=host marvambass/nginx-ssl-secure
-
-docker_run_http: https/dh.pem _https/keys
-	docker run -it -d --rm --name hbe-http -v `pwd`/https:/etc/nginx/external/ --net=host marvambass/nginx-ssl-secure
+docker_hbe_irun:
+	docker run -it    --rm --name hbe -v $(WD)/config.json:/config.json --net=host hue-bridge-emulator
 
 docker_stop:
 	docker kill hbe-http || true
