@@ -56,6 +56,8 @@ run_debug: docker_run_httpd
 ### Docker ###
 docker_run: docker_nginx_run docker_hbe_run
 
+docker_build: docker_hbe_build docker_nginx_build
+
 docker_nginx_build:
 	cd nginx && docker build -t hue-bridge-emulator-nginx .
 
