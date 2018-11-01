@@ -81,7 +81,7 @@ def ssdp_broadcast():
                'HOST: 239.255.255.250:1900\r\n'
                'CACHE-CONTROL: max-age=100\r\n'
                'LOCATION: http://{}:80/description.xml\r\n'
-               'SERVER: Linux/3.14.0 UPnP/1.0 IpBridge/1.20.0\r\n'
+               'SERVER: Linux/3.14.0 UPnP/1.0 IpBridge/1.27.0\r\n'
                'NTS: ssdp:alive\r\n'
                'hue-bridgeid: {}\r\n'.format(addr_ip,
                                              (mac[:6] + 'FFFE' + mac[6:]).upper()))
