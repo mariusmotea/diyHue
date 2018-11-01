@@ -116,7 +116,8 @@ def scanForLights(conf_obj, new_lights): #scan for ESP8266 lights and strips
 #            raise exp
             print("ip " + ip + " is unknow device")
     scanDeconz(conf_obj)
-    discover_tradfri(registry)
+    # TODO Fixme
+    # discover_tradfri(registry)
     conf_obj.save()
 
 
