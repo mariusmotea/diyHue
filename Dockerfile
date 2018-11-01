@@ -2,6 +2,7 @@ FROM debian:buster
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y python3.6 python3-pip libyaml-dev
 
+RUN pip3 install click-datetime
 RUN mkdir /huebridgeemulator
 WORKDIR /huebridgeemulator
 #RUN apt-get update && apt-get install -y python3-six
