@@ -5,7 +5,6 @@ import time
 
 import hug
 
-# from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.tools.light import scanForLights
 from huebridgeemulator.tools.group import update_group_status
 from huebridgeemulator.logger import http_logger

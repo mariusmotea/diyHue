@@ -36,7 +36,7 @@ def addHueMotionSensor(uniqueid):
             "on": False,
             "battery": 100,
             "reachable": True,
-            "alert":"none",
+            "alert": "none",
             "ledindication": False,
             "usertest": False,
             "pending": []},

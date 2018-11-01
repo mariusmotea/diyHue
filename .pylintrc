@@ -318,5 +318,5 @@ int-import-graph=
 # "Exception"
 overgeneral-exceptions=Exception
 
-max-nested-blocks=6
+max-nested-blocks=7
 max-bool-expr=10

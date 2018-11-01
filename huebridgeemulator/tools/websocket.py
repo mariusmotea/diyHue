@@ -1,7 +1,9 @@
 from datetime import datetime
 import json
 from threading import Thread
-#from huebridgeemulator.functions import *
+
+from huebridgeemulator.tools import send_email, rules_processor
+
 
 def websocketClient():
     from ws4py.client.threadedclient import WebSocketClient
@@ -55,12 +57,12 @@ def websocketClient():
                         current_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
                         for key in message["state"].keys():
                             sensors_state[bridge_sensor_id]["state"][key] = current_time
-                        rulesProcessor(bridge_sensor_id, current_time)
+                        rules_processor(bridge_sensor_id, current_time)
                         if "buttonevent" in message["state"] and bridge_config["sensors"][bridge_sensor_id]["modelid"] in ["TRADFRI remote control","RWL021"]:
                             if message["state"]["buttonevent"] in [2001, 3001, 4001, 5001]:
                                 Thread(target=longPressButton, args=[bridge_sensor_id, message["state"]["buttonevent"]]).start()
                         if "presence" in message["state"] and message["state"]["presence"] and "virtual_light" in bridge_config["alarm_config"] and bridge_config["lights"][bridge_config["alarm_config"]["virtual_light"]]["state"]["on"]:
-                            sendEmail(bridge_config["sensors"][bridge_sensor_id]["name"])
+                            send_email(bridge_config["sensors"][bridge_sensor_id]["name"])
                             bridge_config["alarm_config"]["virtual_light"]
                     elif "config" in message and bridge_config["sensors"][bridge_sensor_id]["config"]["on"]:
                         bridge_config["sensors"][bridge_sensor_id]["config"].update(message["config"])

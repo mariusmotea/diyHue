@@ -8,7 +8,7 @@ import struct
 from time import sleep
 from uuid import getnode as get_mac
 
-from huebridgeemulator.tools import getIpAddress
+from huebridgeemulator.tools import get_ip_address
 from huebridgeemulator.logger import sspd_search_logger, sspd_broadcast_logger
 
 
@@ -23,7 +23,7 @@ def ssdp_search():
     .. todo:: Add description and some comments
     """
     sspd_search_logger.debug("Thread ssdpSearch warming up")
-    addr_ip = getIpAddress()
+    addr_ip = get_ip_address()
     mac = '%012x' % get_mac()
     multicast_group_c = SSDP_ADDR
     server_address = ('', SSDP_PORT)
@@ -74,14 +74,14 @@ def ssdp_broadcast():
     .. todo:: Add description and some comments
     """
     sspd_broadcast_logger.debug("Thread ssdpBroadcast warming up")
-    addr_ip = getIpAddress()
+    addr_ip = get_ip_address()
     mac = '%012x' % get_mac()
     multicast_group_s = (SSDP_ADDR, SSDP_PORT)
     message = ('NOTIFY * HTTP/1.1\r\n'
                'HOST: 239.255.255.250:1900\r\n'
                'CACHE-CONTROL: max-age=100\r\n'
                'LOCATION: http://{}:80/description.xml\r\n'
-               'SERVER: Linux/3.14.0 UPnP/1.0 IpBridge/1.20.0\r\n'
+               'SERVER: Linux/3.14.0 UPnP/1.0 IpBridge/1.27.0\r\n'
                'NTS: ssdp:alive\r\n'
                'hue-bridgeid: {}\r\n'.format(addr_ip,
                                              (mac[:6] + 'FFFE' + mac[6:]).upper()))

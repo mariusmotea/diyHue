@@ -159,7 +159,7 @@ REGISTRY_BASE_CONFIG = {
     # "timezone":"Europe/Bucharest",
     "modelid": "BSB002",
     "datastoreversion": "70",
-    "swversion": "1802201122",
+    "swversion": "1809121051",
     "apiversion": "1.24.0",
     "swupdate": {
         "updatestate": 0,

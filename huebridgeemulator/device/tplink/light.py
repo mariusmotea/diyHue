@@ -1,8 +1,9 @@
 """Module to handle TPLink lights."""
 import copy
 import logging
+import socket
 
-from pyHS100 import SmartBulb
+from pyHS100 import SmartBulb, smartdevice
 
 from huebridgeemulator.device.light import Light, LightAddress
 from huebridgeemulator.tools.colors import (
@@ -99,7 +100,11 @@ class TPLinkLight(Light):
                                         "1000, 2, 5500, 100, 1000, 2, 5500, 1")]
 
         self.logger.debug("Set light state: %s", payload)
-        self._con.set_light_state(payload)
+        try:
+            self._con.set_light_state(payload)
+        except (smartdevice.SmartDeviceException, socket.timeout) as exp:
+            # TODO set light as not reachable
+            pass
 
 
 class TPLinkLightAddress(LightAddress):

@@ -63,7 +63,7 @@ def scanDeconz(registry):
             else: #temporary patch for config compatibility with new release
                 registry.deconz["sensors"][sensor]["modelid"] = deconz_sensors[sensor]["modelid"]
                 registry.deconz["sensors"][sensor]["type"] = deconz_sensors[sensor]["type"]
-        generateSensorsState()
+        registry.generate_sensors_state()
 
         if "websocketport" in registry.deconz:
             print("Starting deconz websocket")

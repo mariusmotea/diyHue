@@ -4,7 +4,6 @@ import time
 
 import hug
 
-from huebridgeemulator.tools import generateSensorsState
 from huebridgeemulator.tools.light import scanForLights
 from huebridgeemulator.web.tools import authorized
 
@@ -71,7 +70,7 @@ def api_post_sensors(uid, body, request, response):  # pylint: disable=W0613
         post_dictionary["state"] = {}
     if post_dictionary["modelid"] == "PHWA01":
         post_dictionary.update({"state": {"status": 0}})
-    generateSensorsState(bridge_config, request.context['sensors_state'])
+    registry.generate_sensor_state(bridge_config, request.context['sensors_state'])
     bridge_config['sensors'][new_object_id] = post_dictionary
     request.context['conf_obj'].save()
     return [{"success": {"id": new_object_id}}]
