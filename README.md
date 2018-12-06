@@ -1,6 +1,14 @@
 # MOVED
 This project has rapidly grown in size and has therefore moved to it's own organisation [diyhue](https://github.com/diyhue) Don't worry though, this is not the end of the project, just the next step in its development. It has also grown enough that we have split the repo into four so each can focus on it's own subject, be that the main code, diy Lights or sensors and controllers. You can find the new diy organisation and its repos [here](https://github.com/diyhue)!
 
+To migrate your existing install to the new repo please run the following command:
+```
+curl -s https://raw.githubusercontent.com/mariusmotea/diyHue/master/migrate.sh | sudo bash /dev/stdin
+```
+This will work if you used the easy install script or manually installed to the `/opt/hue-emulator` directory. If your using docker, please just pull the latest image. For other manual installs, please just edit the migrate script to cd to your install directory.
+
+Thank you for your support. :smile:
+
 [![license](https://img.shields.io/badge/license-GPLv3%2FApache%202.0%2FCC%20BY--SA%204.0-blue.svg)](https://github.com/mariusmotea/diyHue/blob/master/LICENSE.md)
 [![CommitActivity](https://img.shields.io/github/commit-activity/y/mariusmotea/diyhue.svg)](https://github.com/mariusmotea/diyHue/commits/master)
 [![ZenHub](https://raw.githubusercontent.com/ZenHubIO/support/master/zenhub-badge.png)](https://zenhub.com)
