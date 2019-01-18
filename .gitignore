@@ -5,6 +5,3 @@ BridgeEmulator/web-ui/public/config.js
 node_modules
 BridgeEmulator/config*
 ./exports
-Lights/*
-Devices/*
-Sensors/*
