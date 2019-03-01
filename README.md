@@ -1,4 +1,7 @@
-# MOVED
+# [MOVED TO DIYHUE ORGANISATION](https://github.com/diyhue)
+
+**Please only open new issues at [diyhue/diyHue](https://github.com/diyhue/diyHue)**
+
 This project has rapidly grown in size and has therefore moved to it's own organisation [diyhue](https://github.com/diyhue) Don't worry though, this is not the end of the project, just the next step in its development. It has also grown enough that we have split the repo into four so each can focus on it's own subject, be that the main code, diy Lights or sensors and controllers. You can find the new diy organisation and its repos [here](https://github.com/diyhue)!
 
 To migrate your existing install to the new repo please run the following command from the diyHue install directory. This is /opt/hue-emultaor if you used the easy install script:
