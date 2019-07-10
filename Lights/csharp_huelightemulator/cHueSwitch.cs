@@ -39,7 +39,6 @@ namespace HueLightEmulator
         HueDeviceConfig hdc = new HueDeviceConfig();
         public delegate void EventOnSetDimlevel(cHueSwitch caller, int DeviceID, byte DimLevel);
         public delegate void EventOnSetDeviceState(cHueSwitch caller, int DeviceID, bool OnState);
-        public delegate void EventOnNewConfig(cHueSwitch caller, string XMLConfig);
         public event EventOnSetDimlevel OnSetDimLevel;
         public event EventOnSetDeviceState OnSetDeviceState;
 
