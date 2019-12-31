@@ -1619,6 +1619,8 @@ class S(BaseHTTPRequestHandler):
                     else:
                         bridge_config[url_pices[3]][url_pices[4]].update(put_dictionary)
                 elif url_pices[3] == "lights" and "config" in put_dictionary:
+                    if not bridge_config["lights"][url_pices[4]].get("config"):
+                        bridge_config["lights"][url_pices[4]]["config"] = {}
                     bridge_config["lights"][url_pices[4]]["config"].update(put_dictionary["config"])
                     if "startup" in put_dictionary["config"] and bridge_config["lights_address"][url_pices[4]]["protocol"] == "native":
                         if put_dictionary["config"]["startup"]["mode"] == "safety":
